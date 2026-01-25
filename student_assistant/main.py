@@ -16,6 +16,11 @@ from pathlib import Path
 # הוספת תיקיית הפרויקט ל-path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# תמיכה בעברית - Hebrew Support
+def heb(text: str) -> str:
+    """פונקציית עזר לתצוגת עברית"""
+    return text if text else ""
+
 from student_assistant.ui import StudentAssistantUI
 from student_assistant.database import DatabaseManager
 from student_assistant.task_manager import TaskManager
@@ -96,7 +101,7 @@ def _show_quick_briefing(db: DatabaseManager, ui: StudentAssistantUI):
 
     # ברכה
     recommendations = proactive.get_daily_recommendations()
-    print(f"\n{recommendations['greeting']}")
+    print(f"\n{heb(recommendations['greeting'])}")
     print()
 
     # תדריך
@@ -104,27 +109,27 @@ def _show_quick_briefing(db: DatabaseManager, ui: StudentAssistantUI):
 
     # אזהרות
     if recommendations['warnings']:
-        print("⚠️  אזהרות:")
+        print(heb("⚠️  אזהרות:"))
         for warning in recommendations['warnings']:
-            print(f"   {warning['message']}")
+            print(f"   {heb(warning['message'])}")
         print()
 
     # משימות בעדיפות
     if recommendations['priority_tasks']:
-        print("🔴 משימות דחופות:")
+        print(heb("🔴 משימות דחופות:"))
         for task in recommendations['priority_tasks'][:3]:
-            print(f"   • {task.title}")
+            print(f"   • {heb(task.title)}")
         print()
 
     # סיכום
     summary = briefing['summary']
-    print(f"📊 סיכום: {summary['tasks_count']} משימות להיום, "
+    print(heb(f"📊 סיכום: {summary['tasks_count']} משימות להיום, "
           f"{summary['overdue_count']} באיחור, "
-          f"{summary['reminders_count']} תזכורות")
+          f"{summary['reminders_count']} תזכורות"))
     print()
 
     # טיפ
-    print(f"💡 טיפ: {recommendations['study_tip']}")
+    print(heb(f"💡 טיפ: {recommendations['study_tip']}"))
     print()
 
 
@@ -132,15 +137,15 @@ def _quick_add_task(db: DatabaseManager, ui: StudentAssistantUI):
     """הוספת משימה מהירה"""
     task_manager = TaskManager(db)
 
-    print("\n📝 הוספת משימה מהירה\n")
+    print(heb("\n📝 הוספת משימה מהירה\n"))
 
-    title = input("כותרת: ").strip()
+    title = input(heb("כותרת: ")).strip()
     if not title:
-        print("❌ חובה להזין כותרת")
+        print(heb("❌ חובה להזין כותרת"))
         return
 
-    due_date = input("תאריך יעד (DD/MM/YYYY, השאר ריק לדילוג): ").strip()
-    priority = input("עדיפות (1-5, ברירת מחדל 3): ").strip()
+    due_date = input(heb("תאריך יעד (DD/MM/YYYY, השאר ריק לדילוג): ")).strip()
+    priority = input(heb("עדיפות (1-5, ברירת מחדל 3): ")).strip()
 
     try:
         priority = int(priority) if priority else 3
@@ -154,9 +159,9 @@ def _quick_add_task(db: DatabaseManager, ui: StudentAssistantUI):
         priority=priority
     )
 
-    print(f"\n{message}")
+    print(f"\n{heb(message)}")
     if success and task:
-        print(f"   מזהה: {task.id}")
+        print(heb(f"   מזהה: {task.id}"))
 
 
 def _show_task_list(db: DatabaseManager, ui: StudentAssistantUI):
@@ -164,17 +169,17 @@ def _show_task_list(db: DatabaseManager, ui: StudentAssistantUI):
     task_manager = TaskManager(db)
     tasks = task_manager.get_all_tasks(exclude_completed=True, only_parent_tasks=True)
 
-    print("\n📋 משימות פעילות:\n")
+    print(heb("\n📋 משימות פעילות:\n"))
 
     if not tasks:
-        print("   אין משימות פעילות 🎉")
+        print(heb("   אין משימות פעילות 🎉"))
     else:
         from student_assistant.config import PRIORITIES
         for task in tasks:
             emoji = PRIORITIES.get(task.priority, {}).get('emoji', '⚪')
             due = f" ({task.due_date})" if task.due_date else ""
             overdue = " ❗" if task.is_overdue else ""
-            print(f"   {emoji} [{task.id}] {task.title}{due}{overdue}")
+            print(f"   {emoji} [{task.id}] {heb(task.title)}{due}{overdue}")
 
     print()
 
@@ -184,13 +189,13 @@ def _show_deadlines(db: DatabaseManager, ui: StudentAssistantUI):
     scheduler = SchedulerManager(db)
     alerts = scheduler.check_deadlines()
 
-    print("\n📅 דדליינים קרובים:\n")
+    print(heb("\n📅 דדליינים קרובים:\n"))
 
     if not alerts:
-        print("   אין דדליינים קרובים 🎉")
+        print(heb("   אין דדליינים קרובים 🎉"))
     else:
         for alert in alerts[:10]:
-            print(f"   {alert['message']}")
+            print(f"   {heb(alert['message'])}")
 
     print()
 
@@ -200,17 +205,17 @@ def _show_stats(db: DatabaseManager, ui: StudentAssistantUI):
     task_manager = TaskManager(db)
     stats = task_manager.get_task_statistics()
 
-    print("\n📊 סטטיסטיקות:\n")
-    print(f"   סה\"כ משימות: {stats['total']}")
-    print(f"   הושלמו השבוע: {stats['completed_this_week']}")
-    print(f"   באיחור: {stats['overdue']}")
+    print(heb("\n📊 סטטיסטיקות:\n"))
+    print(heb(f"   סה\"כ משימות: {stats['total']}"))
+    print(heb(f"   הושלמו השבוע: {stats['completed_this_week']}"))
+    print(heb(f"   באיחור: {stats['overdue']}"))
     print()
 
     from student_assistant.config import STATUSES
-    print("   לפי סטטוס:")
+    print(heb("   לפי סטטוס:"))
     for status, count in stats['by_status'].items():
         status_name = STATUSES.get(status, status)
-        print(f"      {status_name}: {count}")
+        print(heb(f"      {status_name}: {count}"))
 
     print()
 

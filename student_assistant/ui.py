@@ -8,6 +8,16 @@ import sys
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Callable
 
+# תמיכה בעברית - Hebrew Support
+# רוב הטרמינלים המודרניים תומכים בעברית RTL באופן טבעי
+
+def heb(text: str) -> str:
+    """
+    פונקציית עזר לתצוגת עברית
+    ברירת מחדל: ללא המרה (מתאים לטרמינלים מודרניים כמו Windows Terminal)
+    """
+    return text if text else ""
+
 from .database import DatabaseManager
 from .task_manager import TaskManager
 from .planner import StudyPlanner
@@ -75,29 +85,29 @@ class StudentAssistantUI:
         width = 60
         print()
         print(f"{Colors.CYAN}{'═' * width}{Colors.RESET}")
-        print(f"{Colors.CYAN}║{Colors.BOLD} {title:^56} {Colors.RESET}{Colors.CYAN}║{Colors.RESET}")
+        print(f"{Colors.CYAN}║{Colors.BOLD} {heb(title):^56} {Colors.RESET}{Colors.CYAN}║{Colors.RESET}")
         print(f"{Colors.CYAN}{'═' * width}{Colors.RESET}")
         print()
 
     def print_subheader(self, title: str):
         """הדפסת כותרת משנית"""
-        print(f"\n{Colors.YELLOW}── {title} ──{Colors.RESET}\n")
+        print(f"\n{Colors.YELLOW}── {heb(title)} ──{Colors.RESET}\n")
 
     def print_success(self, message: str):
         """הדפסת הודעת הצלחה"""
-        print(f"{Colors.GREEN}{message}{Colors.RESET}")
+        print(f"{Colors.GREEN}{heb(message)}{Colors.RESET}")
 
     def print_error(self, message: str):
         """הדפסת הודעת שגיאה"""
-        print(f"{Colors.RED}{message}{Colors.RESET}")
+        print(f"{Colors.RED}{heb(message)}{Colors.RESET}")
 
     def print_warning(self, message: str):
         """הדפסת אזהרה"""
-        print(f"{Colors.YELLOW}{message}{Colors.RESET}")
+        print(f"{Colors.YELLOW}{heb(message)}{Colors.RESET}")
 
     def print_info(self, message: str):
         """הדפסת מידע"""
-        print(f"{Colors.BLUE}{message}{Colors.RESET}")
+        print(f"{Colors.BLUE}{heb(message)}{Colors.RESET}")
 
     def get_input(self, prompt: str, default: str = None) -> str:
         """קבלת קלט מהמשתמש"""
