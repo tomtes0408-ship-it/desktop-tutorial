@@ -1,0 +1,22 @@
+# Student Assistant - Dependencies
+# עוזר אישי לסטודנטים - תלויות
+
+# Database
+sqlite3  # Built-in with Python
+
+# CLI Interface
+rich>=13.0.0
+prompt_toolkit>=3.0.0
+
+# Scheduling and Time
+schedule>=1.2.0
+python-dateutil>=2.8.0
+
+# Notifications (cross-platform)
+plyer>=2.1.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# Data handling
+pydantic>=2.0.0
