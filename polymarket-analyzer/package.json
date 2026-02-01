@@ -1,0 +1,22 @@
+{
+  "name": "polymarket-analyzer",
+  "version": "1.0.0",
+  "description": "Polymarket User Portfolio Analyzer - מנתח פורטפוליו של משתמשי Polymarket",
+  "main": "browser_scraper.js",
+  "scripts": {
+    "scrape": "node browser_scraper.js",
+    "analyze": "python3 polymarket_analyzer.py"
+  },
+  "keywords": [
+    "polymarket",
+    "crypto",
+    "trading",
+    "analysis",
+    "portfolio"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}
