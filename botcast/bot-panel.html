@@ -1,0 +1,359 @@
+<!-- BotCast Interactive Feature - Ask Bot Panel -->
+<style>
+.bot-interaction-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 350px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 2000;
+    display: none;
+    flex-direction: column;
+    max-height: 500px;
+    animation: slideUp 0.3s ease-out;
+}
+
+.bot-interaction-panel.active {
+    display: flex;
+}
+
+.bot-panel-header {
+    padding: 15px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.bot-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.bot-panel-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.bot-panel-content {
+    padding: 15px;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 350px;
+}
+
+.bot-message {
+    margin-bottom: 12px;
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.bot-message.user {
+    justify-content: flex-end;
+}
+
+.bot-message-bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.bot-message.user .bot-message-bubble {
+    background: #667eea;
+    color: white;
+    border-radius: 10px 0 10px 10px;
+}
+
+.bot-message.bot .bot-message-bubble {
+    background: #f3f4f6;
+    color: #1f2937;
+    border-radius: 0 10px 10px 10px;
+}
+
+.bot-input-area {
+    padding: 12px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 8px;
+    background: #fafafa;
+    border-radius: 0 0 12px 12px;
+}
+
+.bot-input-area input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+}
+
+.bot-input-area input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.bot-input-area button {
+    padding: 10px 14px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+
+.bot-input-area button:hover {
+    background: #5568d3;
+}
+
+.bot-input-area button:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.bot-avatar-small {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.bot-message.bot .bot-avatar-small {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Toggle Button */
+.bot-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 1999;
+}
+
+.bot-toggle-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
+.bot-toggle-btn.hidden {
+    display: none;
+}
+</style>
+
+<!-- Bot Toggle Button -->
+<button class="bot-toggle-btn" onclick="toggleBotPanel()" id="bot-toggle-btn">
+    <i class="fas fa-robot"></i>
+</button>
+
+<!-- Bot Interaction Panel -->
+<div class="bot-interaction-panel" id="bot-interaction-panel">
+    <div class="bot-panel-header">
+        <h3>🤖 שוחח עם בוט</h3>
+        <button class="bot-panel-close" onclick="closeBotPanel()">✕</button>
+    </div>
+    <div class="bot-panel-content" id="bot-messages">
+        <div class="bot-message bot">
+            <div class="bot-avatar-small">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="bot-message-bubble">
+                שלום! אני בוט BotCast. אני יכול לעזור לך למצוא פודקאסטים, לקרוא פרקים או אפילו ליצור דיבוב. מה אתה רוצה לעשות?
+            </div>
+        </div>
+    </div>
+    <div class="bot-input-area">
+        <input 
+            type="text" 
+            id="bot-input" 
+            placeholder="שאל משהו..." 
+            onkeypress="if(event.key==='Enter') sendBotMessage()"
+        >
+        <button onclick="sendBotMessage()" id="bot-send-btn">
+            <i class="fas fa-send"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+let botConversation = [];
+
+function toggleBotPanel() {
+    const panel = document.getElementById('bot-interaction-panel');
+    const toggle = document.getElementById('bot-toggle-btn');
+    
+    if (panel.classList.contains('active')) {
+        closeBotPanel();
+    } else {
+        panel.classList.add('active');
+        toggle.classList.add('hidden');
+        document.getElementById('bot-input').focus();
+    }
+}
+
+function closeBotPanel() {
+    const panel = document.getElementById('bot-interaction-panel');
+    const toggle = document.getElementById('bot-toggle-btn');
+    
+    panel.classList.remove('active');
+    toggle.classList.remove('hidden');
+}
+
+function addBotMessage(text, isUser = false) {
+    const messagesDiv = document.getElementById('bot-messages');
+    const messageEl = document.createElement('div');
+    messageEl.className = `bot-message ${isUser ? 'user' : 'bot'}`;
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'bot-message-bubble';
+    
+    if (!isUser) {
+        const avatar = document.createElement('div');
+        avatar.className = 'bot-avatar-small';
+        avatar.innerHTML = '<i class="fas fa-robot"></i>';
+        messageEl.appendChild(avatar);
+    }
+    
+    bubble.textContent = text;
+    messageEl.appendChild(bubble);
+    
+    messagesDiv.appendChild(messageEl);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    botConversation.push({ user: isUser, text: text });
+}
+
+async function sendBotMessage() {
+    const input = document.getElementById('bot-input');
+    const text = input.value.trim();
+    
+    if (!text) return;
+    
+    // Disable button
+    const sendBtn = document.getElementById('bot-send-btn');
+    sendBtn.disabled = true;
+    
+    // Add user message
+    addBotMessage(text, true);
+    input.value = '';
+    
+    try {
+        // Simulate bot response with API call
+        const response = await processBotQuery(text);
+        
+        // Add bot response
+        addBotMessage(response, false);
+        
+        // Try to generate speech for response
+        if (response.includes('פודקאסט') || response.includes('פרק')) {
+            // This is a response about a podcast, try to generate audio
+            setTimeout(() => {
+                addBotMessage('🎧 אני יוצר דיבוב של התשובה שלי...', false);
+                playSpeech(response, 'nova');
+            }, 500);
+        }
+    } catch (error) {
+        console.error('Error processing bot message:', error);
+        addBotMessage('סליחה, משהו השתבש. נסה שוב.', false);
+    } finally {
+        sendBtn.disabled = false;
+        input.focus();
+    }
+}
+
+async function processBotQuery(query) {
+    // Simple bot logic based on keywords
+    const queryLower = query.toLowerCase();
+    
+    // Search for podcasts
+    if (queryLower.includes('פודקאסט') || queryLower.includes('חפש') || queryLower.includes('מה')) {
+        try {
+            const results = await searchContent(query);
+            
+            if (results.podcasts && results.podcasts.length > 0) {
+                const podcast = results.podcasts[0];
+                return `מצאתי פודקאסט מעניין: "${podcast.name}" - ${podcast.description}`;
+            } else if (results.hosts && results.hosts.length > 0) {
+                const host = results.hosts[0];
+                return `מצאתי בוט מעניין: ${host.name} - ${host.description}`;
+            }
+        } catch (error) {
+            console.warn('Search error:', error);
+        }
+    }
+    
+    // Default responses
+    const responses = {
+        'שלום': 'היי! 👋 אני בוט BotCast. איך אוכל לעזור לך?',
+        'תודה': 'בשמחה! 😊 יש עוד משהו שאתה רוצה לדעת?',
+        'מי אתה': 'אני בוט עוזר BotCast. אני כאן כדי לעזור לך למצוא פודקאסטים, להשמיע פרקים ויצור דיבוב!',
+        'איך זה עובד': 'אתה יכול לחפש פודקאסטים, לבחור פרק, ואני אוכל ליצור לך דיבוב עם קול של בוט!',
+    };
+    
+    for (const [key, value] of Object.entries(responses)) {
+        if (queryLower.includes(key)) {
+            return value;
+        }
+    }
+    
+    return `שאלה מעניינת! 🤔 "${query}" - אני עדיין לומד כי לענות על זה, אבל אתה יכול לחפש פודקאסטים בחיפוש למעלה.`;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Bot panel is ready
+    console.log('✅ Bot interaction panel loaded');
+});
+</script>

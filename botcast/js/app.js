@@ -15,7 +15,50 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHosts();
     renderTrending();
     initNavigation();
+    
+    // Try to load from API, fallback to local data
+    loadDataFromAPI();
 });
+
+/**
+ * Load data from backend API
+ */
+async function loadDataFromAPI() {
+    try {
+        const backend = await checkBackendHealth();
+        if (backend) {
+            console.log('🚀 Loading data from backend API...');
+            
+            // Update renders with API data
+            const hostsCached = botHosts;
+            const podcastsCached = podcasts;
+            
+            // Try to fetch, but use cache as fallback
+            try {
+                const hosts = await fetchHosts();
+                if (hosts.length > 0) {
+                    window.botHosts = hosts;
+                    renderHosts();
+                }
+            } catch (e) {
+                console.warn('Failed to fetch hosts from API, using local data');
+            }
+            
+            try {
+                const pods = await fetchPodcasts();
+                if (pods.length > 0) {
+                    window.podcasts = pods;
+                    renderPodcasts();
+                }
+            } catch (e) {
+                console.warn('Failed to fetch podcasts from API, using local data');
+            }
+        }
+    } catch (error) {
+        console.warn('API not available, using local data:', error);
+    }
+}
+
 
 // Render Functions
 function renderPodcasts() {
@@ -105,7 +148,7 @@ function renderTrending() {
 }
 
 // Player Functions
-function playEpisode(episodeId) {
+async function playEpisode(episodeId) {
     currentEpisode = getEpisodeById(episodeId);
     if (!currentEpisode) return;
 
@@ -143,7 +186,20 @@ function playEpisode(episodeId) {
     // Update mini player
     updateMiniPlayer();
 
-    // Start playing
+    // Add button to generate audio
+    const playerControls = document.getElementById('player-controls');
+    if (playerControls && !document.getElementById('generate-audio-btn')) {
+        const generateBtn = document.createElement('button');
+        generateBtn.id = 'generate-audio-btn';
+        generateBtn.className = 'btn-secondary';
+        generateBtn.innerHTML = '<i class="fas fa-waveform-lines"></i> Generate Audio';
+        generateBtn.onclick = async () => {
+            await playEpisodeWithAudio(episodeId);
+        };
+        playerControls.appendChild(generateBtn);
+    }
+
+    // Try to start playing with audio
     togglePlay();
 }
 
@@ -176,13 +232,20 @@ function togglePlay() {
     if (isPlaying) {
         playBtn.innerHTML = '<i class="fas fa-pause"></i>';
         miniPlayIcon.className = 'fas fa-pause';
+        
+        // Use Web Audio API if available
+        if (currentEpisode) {
+            playEpisodeWithAudio(currentEpisode.id);
+        }
         startProgress();
     } else {
         playBtn.innerHTML = '<i class="fas fa-play"></i>';
         miniPlayIcon.className = 'fas fa-play';
         stopProgress();
+        stopAudio();
     }
 }
+
 
 function startProgress() {
     if (progressInterval) clearInterval(progressInterval);
