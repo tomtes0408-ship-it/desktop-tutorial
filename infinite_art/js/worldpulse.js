@@ -37,6 +37,23 @@ const NEUTRAL = Object.freeze({
 const current = { ...NEUTRAL };
 const target = { ...NEUTRAL };
 
+// כל כתובות המקורות במקום אחד, כדי שדף האבחון (check.html) יבדוק בדיוק
+// את מה שהיצירה באמת מבקשת, ולא עותק שעלול להתיישן.
+export const URLS = {
+  usgs: 'https://earthquake.usgs.gov/earthquake/feed/v1.0/summary/2.5_day.geojson',
+  noaa: 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
+  gold: 'https://data-asg.goldprice.org/dbXRates/USD',
+  hn: 'https://hn.algolia.com/api/v1/search_by_date?tags=story&hitsPerPage=100',
+  stream: 'https://stream.wikimedia.org/v2/stream/recentchange',
+  meteo: (lat, lon) =>
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    '&current=cloud_cover,wind_speed_10m',
+  pageviews: (y, m, d) =>
+    `https://wikimedia.org/api/rest_v1/metrics/pageviews/top/en.wikipedia/all-access/${y}/${m}/${d}`,
+  artic: (page) =>
+    `https://api.artic.edu/api/v1/artworks?limit=100&page=${page}&fields=id,title,color,artist_title`,
+};
+
 function clamp(x, a, b) {
   return Math.min(b, Math.max(a, x));
 }
@@ -64,9 +81,7 @@ function utcDaysAgo(n) {
 // --- מקורות גאופיזיים ---------------------------------------------------
 
 async function readEarthquakes(s) {
-  const data = await safeFetchJson(
-    'https://earthquake.usgs.gov/earthquake/feed/v1.0/summary/2.5_day.geojson'
-  );
+  const data = await safeFetchJson(URLS.usgs);
   const feats = data && Array.isArray(data.features) ? data.features : null;
   if (!feats) throw new Error('no features');
   const mags = feats
@@ -79,9 +94,7 @@ async function readEarthquakes(s) {
 }
 
 async function readSolar(s) {
-  const data = await safeFetchJson(
-    'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'
-  );
+  const data = await safeFetchJson(URLS.noaa);
   if (!Array.isArray(data) || data.length < 2) throw new Error('bad shape');
   const kp = Number(data[data.length - 1][1]);
   if (!Number.isFinite(kp)) throw new Error('bad Kp');
@@ -98,10 +111,7 @@ const SAMPLE_CITIES = [
 async function readWeather(s) {
   const results = await Promise.all(
     SAMPLE_CITIES.map((c) =>
-      safeFetchJson(
-        `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}` +
-          '&current=cloud_cover,wind_speed_10m'
-      )
+      safeFetchJson(URLS.meteo(c.lat, c.lon))
     )
   );
   const valid = results.filter((r) => r && r.current);
@@ -114,7 +124,7 @@ async function readWeather(s) {
 }
 
 async function readGold(s) {
-  const data = await safeFetchJson('https://data-asg.goldprice.org/dbXRates/USD');
+  const data = await safeFetchJson(URLS.gold);
   const item = data && Array.isArray(data.items) ? data.items[0] : null;
   if (!item || typeof item.pcXau !== 'number') throw new Error('bad shape');
   target.warmth = clamp(item.pcXau / 2, -1, 1) * 0.1;
@@ -141,7 +151,7 @@ let liveTrends = null;
 function startEditStream(s) {
   if (editStream || typeof EventSource === 'undefined') return;
   try {
-    editStream = new EventSource('https://stream.wikimedia.org/v2/stream/recentchange');
+    editStream = new EventSource(URLS.stream);
   } catch (e) {
     s.error = 'EventSource נכשל';
     return;
@@ -213,9 +223,7 @@ function sampleLiveTrends(s) {
 }
 
 async function readHackerNews(s) {
-  const data = await safeFetchJson(
-    'https://hn.algolia.com/api/v1/search_by_date?tags=story&hitsPerPage=100'
-  );
+  const data = await safeFetchJson(URLS.hn);
   const hits = data && Array.isArray(data.hits) ? data.hits : null;
   if (!hits || hits.length < 2) throw new Error('bad shape');
   const times = hits.map((h) => h.created_at_i).filter((t) => typeof t === 'number');
@@ -277,9 +285,7 @@ async function readPublicAttention(s) {
   let payload = null;
   for (let back = 1; back <= 3 && !payload; back++) {
     const { y, m, d } = utcDaysAgo(back);
-    payload = await safeFetchJson(
-      `https://wikimedia.org/api/rest_v1/metrics/pageviews/top/en.wikipedia/all-access/${y}/${m}/${d}`
-    );
+    payload = await safeFetchJson(URLS.pageviews(y, m, d));
   }
   const items = payload && Array.isArray(payload.items) ? payload.items[0] : null;
   const raw = items && Array.isArray(items.articles) ? items.articles : null;
@@ -318,9 +324,7 @@ async function readArtOfTheDay(s) {
   const { y, m, d } = utcDaysAgo(0);
   const dayIndex = Math.floor(Date.UTC(y, Number(m) - 1, Number(d)) / 86400000);
   const page = (dayIndex % 50) + 1;
-  const data = await safeFetchJson(
-    `https://api.artic.edu/api/v1/artworks?limit=100&page=${page}&fields=id,title,color,artist_title`
-  );
+  const data = await safeFetchJson(URLS.artic(page));
   const list = data && Array.isArray(data.data) ? data.data : null;
   if (!list) throw new Error('bad shape');
   const withColor = list.filter((a) => a.color && typeof a.color.h === 'number');

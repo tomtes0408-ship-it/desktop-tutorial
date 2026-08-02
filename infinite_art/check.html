@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>בדיקת מקורות — יקום אמנותי אינסופי</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 2rem 1.2rem; background: #0a0a0d; color: #eae6e0;
+    font-family: 'Segoe UI', 'Arial Hebrew', system-ui, sans-serif; line-height: 1.5;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.25rem; margin: 0 0 0.3rem; }
+  .sub { color: #9d9890; font-size: 0.85rem; margin: 0 0 1.4rem; }
+  button {
+    background: #d8b26a; color: #14140f; border: 0; border-radius: 8px;
+    padding: 0.6rem 1.2rem; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button[disabled] { opacity: 0.5; cursor: default; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1.4rem; font-size: 0.85rem; }
+  th, td { text-align: start; padding: 0.5rem 0.4rem; border-bottom: 1px solid #23232a; vertical-align: top; }
+  th { color: #9d9890; font-weight: 400; font-size: 0.75rem; }
+  .st { font-weight: 600; white-space: nowrap; }
+  .ok { color: #7fc98a; }
+  .bad { color: #e08585; }
+  .warn { color: #d8b26a; }
+  .pending { color: #9d9890; }
+  .note { color: #9d9890; font-size: 0.78rem; }
+  code { background: #17171c; padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.78rem; word-break: break-all; }
+  #summary { margin-top: 1.4rem; padding: 0.9rem 1rem; border: 1px solid #23232a; border-radius: 10px; display: none; }
+  #summary.visible { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>בדיקת מקורות "דופק עולמי"</h1>
+  <p class="sub">
+    בודק את תשעת המקורות מול השרתים האמיתיים, מהדפדפן שלכם. מבחין בין
+    "חסום ברשת" לבין "השרת עונה אבל חוסם CORS" — שתי תקלות שנראות זהות
+    בקוד רגיל, אך הפתרון שלהן שונה לגמרי.
+  </p>
+  <button id="run">הרץ בדיקה</button>
+  <div id="summary"></div>
+  <table>
+    <thead>
+      <tr><th style="width:9rem">מקור</th><th style="width:7rem">תוצאה</th><th>פרטים</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <p class="note" style="margin-top:1.5rem">
+    הדף הזה מייבא את הכתובות מתוך <code>js/worldpulse.js</code> עצמו, ולכן
+    הוא בודק תמיד בדיוק את מה שהיצירה מבקשת — בלי עותק שעלול להתיישן.
+  </p>
+</div>
+
+<script type="module">
+import { URLS } from './js/worldpulse.js';
+
+const TIMEOUT = 12000;
+const rowsEl = document.getElementById('rows');
+const runBtn = document.getElementById('run');
+const summaryEl = document.getElementById('summary');
+
+function daysAgo(n) {
+  const d = new Date(Date.now() - n * 86400000);
+  const p = (x) => String(x).padStart(2, '0');
+  return { y: d.getUTCFullYear(), m: p(d.getUTCMonth() + 1), d: p(d.getUTCDate()) };
+}
+const yd = daysAgo(1);
+
+const PROBES = [
+  { label: 'רעידות אדמה', url: URLS.usgs, check: (j) => `${j.features.length} אירועים` },
+  { label: 'פעילות סולארית', url: URLS.noaa, check: (j) => `Kp אחרון: ${j[j.length - 1][1]}` },
+  { label: 'מזג אוויר', url: URLS.meteo(31.77, 35.21), check: (j) => `עננות ${j.current.cloud_cover}%` },
+  { label: 'שוק הזהב', url: URLS.gold, check: (j) => `שינוי ${j.items[0].pcXau}%` },
+  { label: 'Hacker News', url: URLS.hn, check: (j) => `${j.hits.length} סיפורים` },
+  { label: 'צפיות יומיות', url: URLS.pageviews(yd.y, yd.m, yd.d), check: (j) => `${j.items[0].articles.length} ערכים` },
+  { label: 'יצירת היום', url: URLS.artic(1), check: (j) => `${j.data.length} יצירות` },
+  { label: 'זרם עריכות (SSE)', url: URLS.stream, sse: true },
+];
+
+function addRow(label) {
+  const tr = document.createElement('tr');
+  const tdL = document.createElement('td');
+  tdL.textContent = label;
+  const tdS = document.createElement('td');
+  tdS.className = 'st pending';
+  tdS.textContent = 'בודק…';
+  const tdD = document.createElement('td');
+  tdD.className = 'note';
+  tr.append(tdL, tdS, tdD);
+  rowsEl.appendChild(tr);
+  return { status: tdS, detail: tdD };
+}
+
+function set(cell, cls, text, detail) {
+  cell.status.className = 'st ' + cls;
+  cell.status.textContent = text;
+  cell.detail.textContent = detail;
+}
+
+async function probeJson(p, cell) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT);
+  try {
+    const res = await fetch(p.url, { signal: ctrl.signal });
+    if (!res.ok) {
+      set(cell, 'bad', 'HTTP ' + res.status, 'השרת הגיב בשגיאה');
+      return 'bad';
+    }
+    const json = await res.json();
+    let detail;
+    try {
+      detail = p.check(json);
+    } catch (e) {
+      set(cell, 'warn', 'מבנה שונה', 'הבקשה עברה, אך מבנה התגובה אינו כמצופה — צריך להתאים את הפרסור');
+      return 'warn';
+    }
+    set(cell, 'ok', 'תקין', detail);
+    return 'ok';
+  } catch (e) {
+    // fetch נכשל. עכשיו מבחינים: האם ההוסט בכלל נגיש? בקשת no-cors
+    // מצליחה (עם תגובה אטומה) אם השרת עונה אך חוסם CORS.
+    clearTimeout(timer);
+    try {
+      await fetch(p.url, { mode: 'no-cors', signal: AbortSignal.timeout(TIMEOUT) });
+      set(cell, 'warn', 'CORS חסום', 'השרת נגיש, אך אינו מתיר קריאה מדפדפן מדומיין אחר');
+      return 'cors';
+    } catch (e2) {
+      set(cell, 'bad', 'לא נגיש', 'אין מענה כלל — חסימת רשת, DNS, או שהשירות למטה');
+      return 'bad';
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function probeSse(p, cell) {
+  return new Promise((resolve) => {
+    let es;
+    try {
+      es = new EventSource(p.url);
+    } catch (e) {
+      set(cell, 'bad', 'לא נתמך', 'EventSource לא זמין בדפדפן זה');
+      return resolve('bad');
+    }
+    let count = 0;
+    const done = (cls, text, detail, code) => {
+      try { es.close(); } catch (e) {}
+      set(cell, cls, text, detail);
+      resolve(code);
+    };
+    const timer = setTimeout(() => {
+      if (count > 0) done('ok', 'תקין', `${count} עריכות ב-8 שניות`, 'ok');
+      else done('bad', 'אין אירועים', 'החיבור לא סיפק אירועים בתוך 8 שניות', 'bad');
+    }, 8000);
+    es.onmessage = () => { count++; };
+    es.onerror = () => {
+      if (count === 0) {
+        clearTimeout(timer);
+        done('bad', 'לא נגיש', 'החיבור נכשל — חסימת רשת או CORS', 'bad');
+      }
+    };
+  });
+}
+
+runBtn.addEventListener('click', async () => {
+  runBtn.disabled = true;
+  rowsEl.textContent = '';
+  summaryEl.classList.remove('visible');
+  const cells = PROBES.map((p) => addRow(p.label));
+  const results = await Promise.all(
+    PROBES.map((p, i) => (p.sse ? probeSse(p, cells[i]) : probeJson(p, cells[i])))
+  );
+  const ok = results.filter((r) => r === 'ok').length;
+  const cors = results.filter((r) => r === 'cors').length;
+  summaryEl.textContent =
+    `${ok} מתוך ${results.length} מקורות עובדים במלואם.` +
+    (cors ? ` ${cors} נגישים אך חוסמים CORS — אלה לא יוכלו לעבוד מהדפדפן ויש להחליף אותם.` : '') +
+    ' מקורות שנכשלו פשוט יישארו ניטרליים; היצירה עצמה עובדת כרגיל בכל מקרה.';
+  summaryEl.classList.add('visible');
+  runBtn.disabled = false;
+  runBtn.textContent = 'הרץ שוב';
+});
+</script>
+</body>
+</html>
