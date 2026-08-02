@@ -110,6 +110,101 @@ html, body {
   font-weight: 400;
 }
 
+.hudRow.clickable {
+  cursor: pointer;
+}
+.hudRow.clickable:hover {
+  opacity: 0.95;
+}
+
+#pulsePanel {
+  position: fixed;
+  top: 8.6rem;
+  right: 1.2rem;
+  width: min(340px, calc(100vw - 2.4rem));
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.85rem 1rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 14px;
+  display: none;
+}
+#pulsePanel.visible {
+  display: block;
+}
+#pulsePanel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.pulseGroup {
+  margin: 0.6rem 0 0.25rem;
+  color: var(--accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+.pulseItem {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.12rem 0;
+  opacity: 0.5;
+}
+.pulseItem.ok {
+  opacity: 1;
+}
+.pulseDot {
+  flex: 0 0 auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+.pulseItem.ok .pulseDot {
+  background: #7fc98a;
+  box-shadow: 0 0 6px rgba(127, 201, 138, 0.7);
+}
+.pulseName {
+  flex: 0 0 auto;
+}
+.pulseDetail {
+  margin-inline-start: auto;
+  text-align: end;
+  color: var(--dim);
+  font-size: 0.7rem;
+}
+.trendBox {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+.trendItem {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.1rem 0;
+}
+.trendItem > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trendItem .pulseDetail {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+}
+
+#pulsePanel .note {
+  margin: 0.7rem 0 0;
+  color: var(--dim);
+  font-size: 0.72rem;
+}
+
 #helpToggle {
   position: fixed;
   top: 1.1rem;

@@ -1,7 +1,12 @@
 // יקום אמנותי אינסופי — מנוע התצוגה, הקלט וממשק המשתמש
 import { VERTEX_SRC, FRAGMENT_SRC } from './shaders.js';
 import { FractalCamera } from './camera.js';
-import { startWorldPulse, tickWorldPulse, getWorldPulseSources } from './worldpulse.js';
+import {
+  startWorldPulse,
+  tickWorldPulse,
+  getWorldPulseSources,
+  getLiveTrends,
+} from './worldpulse.js';
 
 const canvas = document.getElementById('gl');
 const hud = {
@@ -54,6 +59,8 @@ const uniforms = {};
 for (const name of [
   'uResolution', 'uAspect', 'uSeed', 'uLocalUV', 'uZoomFrac', 'uDepth', 'uTime',
   'uWorldHue', 'uWorldGlow', 'uWorldFlow', 'uWorldWarmth', 'uWorldHaze',
+  'uWorldTurbulence', 'uWorldFocus', 'uWorldTension', 'uWorldFracture',
+  'uWorldAccentHue', 'uWorldAccentAmount',
 ]) {
   uniforms[name] = gl.getUniformLocation(program, name);
 }
@@ -186,16 +193,82 @@ function formatYears(t) {
 let lastFrame = performance.now();
 let fpsSmooth = 60;
 
+const pulsePanel = document.getElementById('pulsePanel');
+const pulseRow = document.getElementById('pulseRow');
+pulseRow.addEventListener('click', () => pulsePanel.classList.toggle('visible'));
+
 function updatePulseHud() {
   const sources = getWorldPulseSources();
-  const active = Object.values(sources).filter((s) => s.ok);
-  if (active.length === 0) {
-    hud.pulse.textContent = 'ממתין…';
-    hud.pulse.title = 'עדיין לא התקבלו נתונים חיים מהעולם (או שאין גישת רשת)';
-    return;
+  const all = Object.values(sources);
+  const active = all.filter((s) => s.ok);
+  hud.pulse.textContent = active.length === 0 ? 'ממתין…' : `${active.length}/${all.length} מקורות`;
+
+  // מרכיבים את הפאנל דרך ה-DOM (ולא דרך innerHTML) כדי שטקסט שמגיע
+  // משירות חיצוני — כותרת יצירה, שם ערך בוויקיפדיה — לעולם לא יוכל
+  // להתפרש כ-HTML.
+  pulsePanel.textContent = '';
+  const heading = document.createElement('h2');
+  heading.textContent = 'דופק עולמי';
+  pulsePanel.appendChild(heading);
+
+  // מה שהעולם כותב עליו ממש עכשיו — ראש הפאנל, כי זה הדבר החי ביותר כאן.
+  const trends = getLiveTrends();
+  if (trends) {
+    const box = document.createElement('div');
+    box.className = 'trendBox';
+    const t = document.createElement('div');
+    t.className = 'pulseGroup';
+    t.textContent = 'נערך ברגע זה';
+    box.appendChild(t);
+    for (const item of trends.top) {
+      const row = document.createElement('div');
+      row.className = 'trendItem';
+      const name = document.createElement('span');
+      name.textContent = item.title;
+      const n = document.createElement('span');
+      n.className = 'pulseDetail';
+      n.textContent = `${item.n} עריכות`;
+      row.append(name, n);
+      box.appendChild(row);
+    }
+    pulsePanel.appendChild(box);
   }
-  hud.pulse.textContent = `${active.length}/4 מקורות`;
-  hud.pulse.title = active.map((s) => `${s.label}: ${s.detail}`).join('\n');
+
+  const groups = new Map();
+  for (const s of all) {
+    if (!groups.has(s.group)) groups.set(s.group, []);
+    groups.get(s.group).push(s);
+  }
+
+  for (const [group, items] of groups) {
+    const gEl = document.createElement('div');
+    gEl.className = 'pulseGroup';
+    gEl.textContent = group;
+    pulsePanel.appendChild(gEl);
+    for (const s of items) {
+      const row = document.createElement('div');
+      row.className = 'pulseItem' + (s.ok ? ' ok' : '');
+      const dot = document.createElement('span');
+      dot.className = 'pulseDot';
+      const label = document.createElement('span');
+      label.className = 'pulseName';
+      label.textContent = s.label;
+      const detail = document.createElement('span');
+      detail.className = 'pulseDetail';
+      detail.textContent = s.ok ? s.detail : s.error || 'ממתין';
+      row.append(dot, label, detail);
+      pulsePanel.appendChild(row);
+    }
+  }
+
+  if (active.length === 0) {
+    const note = document.createElement('p');
+    note.className = 'note';
+    note.textContent =
+      'אין כרגע נתונים חיים (אין גישת רשת, או שהשירותים חסומים). ' +
+      'היצירה ממשיכה לפעול בדיוק כרגיל — פשוט בלי המודולציה החיה.';
+    pulsePanel.appendChild(note);
+  }
 }
 
 function frame(now) {
@@ -226,6 +299,12 @@ function frame(now) {
   gl.uniform1f(uniforms.uWorldFlow, pulse.flow);
   gl.uniform1f(uniforms.uWorldWarmth, pulse.warmth);
   gl.uniform1f(uniforms.uWorldHaze, pulse.haze);
+  gl.uniform1f(uniforms.uWorldTurbulence, pulse.turbulence);
+  gl.uniform1f(uniforms.uWorldFocus, pulse.focus);
+  gl.uniform1f(uniforms.uWorldTension, pulse.tension);
+  gl.uniform1f(uniforms.uWorldFracture, pulse.fracture);
+  gl.uniform1f(uniforms.uWorldAccentHue, pulse.accentHue);
+  gl.uniform1f(uniforms.uWorldAccentAmount, pulse.accentAmount);
 
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 
