@@ -24,6 +24,16 @@ uniform float uZoomFrac;
 uniform int uDepth;
 uniform float uTime;
 
+// "דופק עולמי": מודולציה עדינה ומוגבלת שמגיעה מנתונים חיים אמיתיים
+// (רעידות אדמה, פעילות סולארית, מזג אוויר גלובלי, שוק הזהב — ראו
+// worldpulse.js). לעולם לא משפיעה על המבנה הפרקטלי או על זמני הלידה —
+// רק על גוון, זוהר, קצב תנועה וערפל אטמוספרי, בטווחים קטנים ומוגבלים.
+uniform float uWorldHue;
+uniform float uWorldGlow;
+uniform float uWorldFlow;
+uniform float uWorldWarmth;
+uniform float uWorldHaze;
+
 out vec4 fragColor;
 
 const int SUBDIV = 3;
@@ -136,6 +146,18 @@ StyleOut styleWeave(vec2 uv, uint seed, float t) {
   float a = smoothstep(0.3, 1.0, abs(w1 * w2));
   return StyleOut(vec3(a), a * 0.8);
 }
+// סיבוב גוון עדין (זהה במהות לפילטר hue-rotate של CSS) — בשימוש רק עם
+// זוויות קטנות מאוד שמגיעות מ-uWorldHue, ולכן נשאר תמיד "עדין".
+vec3 hueRotateSmall(vec3 c, float a) {
+  float cosA = cos(a), sinA = sin(a);
+  mat3 m = mat3(
+    0.299 + 0.701 * cosA + 0.168 * sinA, 0.587 - 0.587 * cosA + 0.330 * sinA, 0.114 - 0.114 * cosA - 0.497 * sinA,
+    0.299 - 0.299 * cosA - 0.328 * sinA, 0.587 + 0.413 * cosA + 0.035 * sinA, 0.114 - 0.114 * cosA + 0.292 * sinA,
+    0.299 - 0.300 * cosA + 1.250 * sinA, 0.587 - 0.588 * cosA - 1.050 * sinA, 0.114 + 0.886 * cosA - 0.203 * sinA
+  );
+  return clamp(c * m, 0.0, 1.0);
+}
+
 StyleOut renderStyle(int family, vec2 uv, uint seed, float t) {
   if (family == 0) return styleBloom(uv, seed, t);
   if (family == 1) return styleVeins(uv, seed, t);
@@ -191,7 +213,8 @@ void main() {
     } else {
       family = fr < 0.4 ? 2 : (fr < 0.7 ? 4 : 1);
     }
-    StyleOut so = renderStyle(family, local, cellSeed, uTime + float(depth) * 13.0);
+    float animTime = uTime * uWorldFlow + float(depth) * 13.0;
+    StyleOut so = renderStyle(family, local, cellSeed, animTime);
     vec3 tinted = paletteColor(paletteIdx, so.color.r * 0.7 + hashFloat(cellSeed, 8u) * 0.3);
     float blend = reveal * so.alpha * 0.6;
     color = mix(color, tinted, blend);
@@ -201,6 +224,13 @@ void main() {
     p = local;
     depth += 1;
   }
+
+  // "דופק עולמי": מגע אחרון, עדין ומוגבל, שמחבר את היצירה לרגע האמיתי
+  // בעולם — לעולם לא נוגע במבנה שנוצר למעלה, רק בגימור שלו.
+  color *= uWorldGlow;
+  color += vec3(uWorldWarmth, uWorldWarmth * 0.3, -uWorldWarmth * 0.6);
+  color = hueRotateSmall(color, uWorldHue);
+  color = mix(color, vec3(0.55, 0.56, 0.6), uWorldHaze);
 
   color = pow(max(color, 0.0), vec3(0.9));
   fragColor = vec4(color, 1.0);

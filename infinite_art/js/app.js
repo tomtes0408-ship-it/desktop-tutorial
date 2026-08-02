@@ -1,6 +1,7 @@
 // יקום אמנותי אינסופי — מנוע התצוגה, הקלט וממשק המשתמש
 import { VERTEX_SRC, FRAGMENT_SRC } from './shaders.js';
 import { FractalCamera } from './camera.js';
+import { startWorldPulse, tickWorldPulse, getWorldPulseSources } from './worldpulse.js';
 
 const canvas = document.getElementById('gl');
 const hud = {
@@ -9,6 +10,7 @@ const hud = {
   time: document.getElementById('hudTime'),
   era: document.getElementById('hudEra'),
   fps: document.getElementById('hudFps'),
+  pulse: document.getElementById('hudPulse'),
 };
 const timeline = document.getElementById('timeline');
 const playBtn = document.getElementById('playBtn');
@@ -49,7 +51,10 @@ const vao = gl.createVertexArray();
 gl.bindVertexArray(vao);
 
 const uniforms = {};
-for (const name of ['uResolution', 'uAspect', 'uSeed', 'uLocalUV', 'uZoomFrac', 'uDepth', 'uTime']) {
+for (const name of [
+  'uResolution', 'uAspect', 'uSeed', 'uLocalUV', 'uZoomFrac', 'uDepth', 'uTime',
+  'uWorldHue', 'uWorldGlow', 'uWorldFlow', 'uWorldWarmth', 'uWorldHaze',
+]) {
   uniforms[name] = gl.getUniformLocation(program, name);
 }
 
@@ -181,6 +186,18 @@ function formatYears(t) {
 let lastFrame = performance.now();
 let fpsSmooth = 60;
 
+function updatePulseHud() {
+  const sources = getWorldPulseSources();
+  const active = Object.values(sources).filter((s) => s.ok);
+  if (active.length === 0) {
+    hud.pulse.textContent = 'ממתין…';
+    hud.pulse.title = 'עדיין לא התקבלו נתונים חיים מהעולם (או שאין גישת רשת)';
+    return;
+  }
+  hud.pulse.textContent = `${active.length}/4 מקורות`;
+  hud.pulse.title = active.map((s) => `${s.label}: ${s.detail}`).join('\n');
+}
+
 function frame(now) {
   const dt = Math.min((now - lastFrame) / 1000, 0.1);
   lastFrame = now;
@@ -194,6 +211,8 @@ function frame(now) {
 
   resize();
 
+  const pulse = tickWorldPulse(dt);
+
   const u = camera.uniforms();
   gl.uniform2f(uniforms.uResolution, canvas.width, canvas.height);
   gl.uniform1f(uniforms.uAspect, canvas.width / canvas.height);
@@ -202,6 +221,11 @@ function frame(now) {
   gl.uniform1f(uniforms.uZoomFrac, u.zoomFrac);
   gl.uniform1i(uniforms.uDepth, u.depth);
   gl.uniform1f(uniforms.uTime, state.time);
+  gl.uniform1f(uniforms.uWorldHue, pulse.hue);
+  gl.uniform1f(uniforms.uWorldGlow, pulse.glow);
+  gl.uniform1f(uniforms.uWorldFlow, pulse.flow);
+  gl.uniform1f(uniforms.uWorldWarmth, pulse.warmth);
+  gl.uniform1f(uniforms.uWorldHaze, pulse.haze);
 
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -216,4 +240,6 @@ function frame(now) {
 
 timeline.value = Math.round(timeToTimeline(state.time) * 1000);
 resize();
+startWorldPulse();
+setInterval(updatePulseHud, 2000);
 requestAnimationFrame(frame);
