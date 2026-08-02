@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>יקום אמנותי אינסופי</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <canvas id="gl"></canvas>
+
+  <div id="unsupported">
+    הדפדפן שלכם אינו תומך ב-WebGL2. נסו לפתוח דף זה בדפדפן עדכני (Chrome, Edge, Firefox).
+  </div>
+
+  <header id="titleBar">
+    <h1>יקום אמנותי אינסופי</h1>
+    <p>יצירה חיה שאינה נגמרת — זמן ומרחב הם חומר הגלם שלה</p>
+  </header>
+
+  <button id="helpToggle" title="הסבר ובקרות">?</button>
+  <div id="helpPanel">
+    <h2>איך זה עובד</h2>
+    <ul>
+      <li><b>גלגלת עכבר / פינץ':</b> זום פנימה והחוצה, ללא הגבלה בשני הכיוונים</li>
+      <li><b>גרירה:</b> תזוזה חופשית במרחב</li>
+      <li><b>ציר הזמן:</b> גררו כדי לחזור לכל רגע בעבר, או הפעילו נגינה כדי לצפות במאות ואלפי שנות התפתחות</li>
+      <li><b>אקראי:</b> קפיצה לנקודה עמוקה ובלתי צפויה ביקום</li>
+    </ul>
+    <p class="note">
+      שום פיקסל לא נשמר בזיכרון — כל מה שאתם רואים נוצר בזמן אמת ממערכת
+      חוקים מתמטית, כך שהיצירה יכולה להמשיך להתפתח לנצח.
+    </p>
+    <p class="note">
+      "דופק עולמי": היצירה מושכת ברקע נתונים חיים אמיתיים (רעידות אדמה,
+      פעילות סולארית, מזג אוויר גלובלי, שוק הזהב) ומגיבה אליהם בעדינות —
+      גוון, זוהר וקצב תנועה קלים. זהו רק "מזג אוויר" רגעי; המבנה עצמו
+      תמיד נשאר דטרמיניסטי וניתן לשחזור.
+    </p>
+  </div>
+
+  <div id="hud">
+    <div class="hudRow">
+      <span class="hudLabel">עומק זום</span>
+      <span id="hudDepth" class="hudValue">0.00</span>
+      <span id="hudScale" class="hudTag">דיוקן</span>
+    </div>
+    <div class="hudRow">
+      <span class="hudLabel">שנה</span>
+      <span id="hudTime" class="hudValue">0</span>
+      <span id="hudEra" class="hudTag">בראשית</span>
+    </div>
+    <div class="hudRow faint">
+      <span class="hudLabel">קצב תצוגה</span>
+      <span id="hudFps" class="hudValue">60</span>
+      <span class="hudTag">fps</span>
+    </div>
+    <div class="hudRow faint" title="נתונים חיים מהעולם המשפיעים בעדינות על היצירה">
+      <span class="hudLabel">דופק עולמי</span>
+      <span id="hudPulse" class="hudValue">ממתין…</span>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="playBtn" title="נגן/השהה ציר זמן">▶</button>
+    <input id="timeline" type="range" min="0" max="1000" value="0" step="1" />
+    <select id="speedSel" title="קצב חלוף הזמן">
+      <option value="1">1 שנה/שנייה</option>
+      <option value="20">20 שנה/שנייה</option>
+      <option value="200" selected>200 שנה/שנייה</option>
+      <option value="3000">3,000 שנה/שנייה</option>
+      <option value="40000">40,000 שנה/שנייה</option>
+    </select>
+    <button id="randomBtn" title="קפיצה אקראית לעומק">🎲</button>
+    <button id="resetBtn" title="חזרה לנקודת ההתחלה">⟲</button>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
