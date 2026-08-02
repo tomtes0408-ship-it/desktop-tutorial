@@ -33,6 +33,12 @@ uniform float uWorldGlow;
 uniform float uWorldFlow;
 uniform float uWorldWarmth;
 uniform float uWorldHaze;
+uniform float uWorldTurbulence;
+uniform float uWorldFocus;
+uniform float uWorldTension;
+uniform float uWorldFracture;
+uniform float uWorldAccentHue;
+uniform float uWorldAccentAmount;
 
 out vec4 fragColor;
 
@@ -214,7 +220,16 @@ void main() {
       family = fr < 0.4 ? 2 : (fr < 0.7 ? 4 : 1);
     }
     float animTime = uTime * uWorldFlow + float(depth) * 13.0;
-    StyleOut so = renderStyle(family, local, cellSeed, animTime);
+
+    // "חוסר שקט": עיוות עדין של הקואורדינטה שנמסרת לציור בלבד. שימו לב
+    // ש-local עצמו נשאר ללא שינוי וממשיך לשמש לירידה לרמה הבאה, ולכן
+    // המבנה הפרקטלי נותר דטרמיניסטי לחלוטין — רק המראה רוטט.
+    vec2 drawUV = local;
+    if (uWorldTurbulence > 0.001 && oct >= 3) {
+      vec2 w = vec2(fbm(local * 3.0 + animTime * 0.02), fbm(local * 3.0 - animTime * 0.02));
+      drawUV += (w - 0.5) * 0.06 * uWorldTurbulence;
+    }
+    StyleOut so = renderStyle(family, drawUV, cellSeed, animTime);
     vec3 tinted = paletteColor(paletteIdx, so.color.r * 0.7 + hashFloat(cellSeed, 8u) * 0.3);
     float blend = reveal * so.alpha * 0.6;
     color = mix(color, tinted, blend);
@@ -230,6 +245,37 @@ void main() {
   color *= uWorldGlow;
   color += vec3(uWorldWarmth, uWorldWarmth * 0.3, -uWorldWarmth * 0.6);
   color = hueRotateSmall(color, uWorldHue);
+
+  // גוון ההדגשה של "יצירת היום" — צבע דומיננטי של יצירה אנושית אמיתית,
+  // מעורבב פנימה תוך שמירה על הבהירות המקורית (תיבול, לא צביעה מחדש).
+  if (uWorldAccentAmount > 0.001) {
+    vec3 accent = hueRotateSmall(vec3(0.8, 0.45, 0.25), uWorldAccentHue);
+    float lum = dot(color, vec3(0.299, 0.587, 0.114));
+    vec3 tinted = accent * (lum / max(dot(accent, vec3(0.299, 0.587, 0.114)), 0.001));
+    color = mix(color, tinted, uWorldAccentAmount * 0.22);
+  }
+
+  // מתח פוליטי: ניגודיות מעט חדה יותר וצללים קרירים — אי-נוחות שקטה.
+  if (uWorldTension > 0.001) {
+    color = mix(color, (color - 0.5) * 1.12 + 0.5, uWorldTension * 0.5);
+    color.b += (1.0 - smoothstep(0.0, 0.4, dot(color, vec3(0.333)))) * uWorldTension * 0.04;
+  }
+
+  // סדקים דקיקים: שבירות של תמונת עולם משותפת. תמיד עדין, אף פעם לא
+  // הופך לרעש — ומעולם לא נוגע במבנה שמתחת.
+  if (uWorldFracture > 0.001) {
+    vec2 cp = gl_FragCoord.xy / uResolution.y;
+    float ridge = abs(fbm(cp * 7.0 + 31.7) - 0.5);
+    float crack = smoothstep(0.035, 0.0, ridge);
+    color = mix(color, color * 0.35, crack * uWorldFracture * 0.35);
+  }
+
+  // ריכוזיות תשומת הלב: ככל שהעולם כולו מביט באותו סיפור, המבט מתכנס.
+  if (uWorldFocus > 0.001) {
+    float r = length(screen) / 0.75;
+    color *= mix(1.0, 1.0 - smoothstep(0.35, 1.25, r) * 0.55, uWorldFocus);
+  }
+
   color = mix(color, vec3(0.55, 0.56, 0.6), uWorldHaze);
 
   color = pow(max(color, 0.0), vec3(0.9));
