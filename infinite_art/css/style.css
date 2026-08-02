@@ -178,6 +178,27 @@ html, body {
   color: var(--dim);
   font-size: 0.7rem;
 }
+.trendBox {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+.trendItem {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.1rem 0;
+}
+.trendItem > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trendItem .pulseDetail {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+}
+
 #pulsePanel .note {
   margin: 0.7rem 0 0;
   color: var(--dim);

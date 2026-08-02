@@ -1,7 +1,12 @@
 // יקום אמנותי אינסופי — מנוע התצוגה, הקלט וממשק המשתמש
 import { VERTEX_SRC, FRAGMENT_SRC } from './shaders.js';
 import { FractalCamera } from './camera.js';
-import { startWorldPulse, tickWorldPulse, getWorldPulseSources } from './worldpulse.js';
+import {
+  startWorldPulse,
+  tickWorldPulse,
+  getWorldPulseSources,
+  getLiveTrends,
+} from './worldpulse.js';
 
 const canvas = document.getElementById('gl');
 const hud = {
@@ -205,6 +210,29 @@ function updatePulseHud() {
   const heading = document.createElement('h2');
   heading.textContent = 'דופק עולמי';
   pulsePanel.appendChild(heading);
+
+  // מה שהעולם כותב עליו ממש עכשיו — ראש הפאנל, כי זה הדבר החי ביותר כאן.
+  const trends = getLiveTrends();
+  if (trends) {
+    const box = document.createElement('div');
+    box.className = 'trendBox';
+    const t = document.createElement('div');
+    t.className = 'pulseGroup';
+    t.textContent = 'נערך ברגע זה';
+    box.appendChild(t);
+    for (const item of trends.top) {
+      const row = document.createElement('div');
+      row.className = 'trendItem';
+      const name = document.createElement('span');
+      name.textContent = item.title;
+      const n = document.createElement('span');
+      n.className = 'pulseDetail';
+      n.textContent = `${item.n} עריכות`;
+      row.append(name, n);
+      box.appendChild(row);
+    }
+    pulsePanel.appendChild(box);
+  }
 
   const groups = new Map();
   for (const s of all) {

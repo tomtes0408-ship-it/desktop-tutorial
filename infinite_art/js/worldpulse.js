@@ -127,9 +127,16 @@ async function readGold(s) {
 // שהיא קורית. אנחנו לא קוראים את התוכן — רק סופרים את הקצב. זהו אולי
 // המדד הישיר ביותר ל"כמה האנושות כותבת על עצמה כרגע".
 const editWindow = [];
+const topicWindow = [];
+const TREND_WINDOW_MS = 10 * 60 * 1000;
+// ערך צריך להיערך יותר מפעם אחת בחלון כדי להיחשב "טרנד". זה מסנן גם
+// רעש אקראי וגם עריכות ונדליזם בודדות, ומשאיר נושאים שבאמת מושכים
+// עבודה מרובת-אנשים כרגע.
+const MIN_TREND_EDITS = 2;
 let editStream = null;
 let hnRate = null;
 let streamNote = '';
+let liveTrends = null;
 
 function startEditStream(s) {
   if (editStream || typeof EventSource === 'undefined') return;
@@ -139,8 +146,20 @@ function startEditStream(s) {
     s.error = 'EventSource נכשל';
     return;
   }
-  editStream.onmessage = () => {
-    editWindow.push(Date.now());
+  editStream.onmessage = (ev) => {
+    const now = Date.now();
+    editWindow.push(now);
+    // מלבד הקצב, הזרם מספר לנו *על מה* העולם כותב ממש עכשיו. מסננים
+    // לערכי תוכן אמיתיים בוויקיפדיה האנגלית בלבד (namespace 0), ללא
+    // בוטים — כך שהמדגם הוא ערכים אנציקלופדיים ולא דפי שיחה או תחזוקה.
+    try {
+      const e = JSON.parse(ev.data);
+      if (e && e.namespace === 0 && !e.bot && e.server_name === 'en.wikipedia.org' && e.title) {
+        topicWindow.push({ t: now, title: String(e.title) });
+      }
+    } catch (err) {
+      /* אירוע לא תקין — מתעלמים ממנו בשקט */
+    }
   };
   // ניתוקים זמניים הם חלק נורמלי מ-SSE ו-EventSource מתחבר מחדש לבד.
   // לכן לא מסמנים כאן כישלון: הסמכות היחידה לשאלה "יש נתונים?" היא
@@ -161,6 +180,36 @@ function sampleEditRate(s) {
   const hnPart = hnRate == null ? wikiPart : clamp(hnRate / 40, 0, 1);
   target.turbulence = clamp((wikiPart * 0.7 + hnPart * 0.3), 0, 1);
   s.detail = `${perSec.toFixed(1)} עריכות ויקי לשנייה`;
+}
+
+// מה שהעולם עורך *ברגע זה*. בניגוד לנתוני הצפיות היומיים, שמתפרסמים
+// בפיגור של יום עד שלושה, זהו חתך חי מהעשר דקות האחרונות.
+function sampleLiveTrends(s) {
+  const cutoff = Date.now() - TREND_WINDOW_MS;
+  while (topicWindow.length && topicWindow[0].t < cutoff) topicWindow.shift();
+  if (topicWindow.length === 0) throw new Error(streamNote || 'טרם התקבלו עריכות');
+
+  const counts = new Map();
+  for (const { title } of topicWindow) counts.set(title, (counts.get(title) || 0) + 1);
+
+  const ranked = [...counts.entries()]
+    .filter(([, n]) => n >= MIN_TREND_EDITS)
+    .sort((a, b) => b[1] - a[1]);
+  if (ranked.length === 0) throw new Error('אין עדיין נושא חוזר');
+
+  const total = ranked.reduce((sum, [, n]) => sum + n, 0);
+  const matchShare = (re) =>
+    ranked.reduce((sum, [title, n]) => sum + (re.test(titleText(title)) ? n : 0), 0) / total;
+
+  liveTrends = {
+    top: ranked.slice(0, 5).map(([title, n]) => ({ title: titleText(title), n })),
+    topShare: ranked[0][1] / total,
+    politics: matchShare(POLITICS_RE),
+    conspiracy: matchShare(CONSPIRACY_RE),
+    sample: ranked.length,
+  };
+  applyAttentionTargets();
+  s.detail = liveTrends.top.map((x) => x.title).join(' · ');
 }
 
 async function readHackerNews(s) {
@@ -195,6 +244,26 @@ function titleText(article) {
   return String(article || '').replace(/_/g, ' ');
 }
 
+let dailyAttention = null;
+
+// שני מקורות מתארים את אותו ממד — "על מה העולם מסתכל" — באופקי זמן
+// שונים: הזרם החי (עשר דקות אחרונות) והצפיות היומיות (מפגרות ביום עד
+// שלושה). הטרנד החי תמיד מנצח כשיש לו מדגם מספיק; היומי הוא רשת ביטחון
+// לרגעים הראשונים אחרי הטעינה ולמקרה שהזרם חסום.
+const MIN_LIVE_SAMPLE = 8;
+function applyAttentionTargets() {
+  const live = liveTrends && liveTrends.sample >= MIN_LIVE_SAMPLE ? liveTrends : null;
+  const src = live || dailyAttention;
+  if (!src) return;
+  target.focus = clamp((src.topShare - 0.02) / 0.12, 0, 1) * 0.8;
+  target.tension = clamp(src.politics / 0.18, 0, 1);
+  target.fracture = clamp(src.conspiracy / 0.05, 0, 1);
+}
+
+export function getLiveTrends() {
+  return liveTrends && liveTrends.sample >= MIN_LIVE_SAMPLE ? liveTrends : null;
+}
+
 function shareMatching(articles, total, re) {
   let sum = 0;
   for (const a of articles) {
@@ -226,18 +295,18 @@ async function readPublicAttention(s) {
   const total = articles.reduce((sum, a) => sum + (a.views || 0), 0);
   if (total <= 0) throw new Error('no views');
 
-  const topShare = (articles[0].views || 0) / total;
-  target.focus = clamp((topShare - 0.02) / 0.12, 0, 1) * 0.8;
-
-  const polShare = shareMatching(articles, total, POLITICS_RE);
-  target.tension = clamp(polShare / 0.18, 0, 1);
-
-  const conShare = shareMatching(articles, total, CONSPIRACY_RE);
-  target.fracture = clamp(conShare / 0.05, 0, 1);
+  dailyAttention = {
+    top: titleText(articles[0].article),
+    topShare: (articles[0].views || 0) / total,
+    politics: shareMatching(articles, total, POLITICS_RE),
+    conspiracy: shareMatching(articles, total, CONSPIRACY_RE),
+  };
+  applyAttentionTargets();
 
   s.detail =
-    `הנצפה ביותר: ${titleText(articles[0].article)} · ` +
-    `פוליטי ${(polShare * 100).toFixed(1)}% · שולי ${(conShare * 100).toFixed(1)}%`;
+    `הנצפה אתמול: ${dailyAttention.top} · ` +
+    `פוליטי ${(dailyAttention.politics * 100).toFixed(1)}% · ` +
+    `שולי ${(dailyAttention.conspiracy * 100).toFixed(1)}%`;
 }
 
 // --- תרבות ואמנות -------------------------------------------------------
@@ -273,7 +342,8 @@ const registry = [
   { key: 'gold', label: 'שוק הזהב', group: 'כלכלה', run: readGold },
   { key: 'wikiStream', label: 'זרם עריכות ויקימדיה', group: 'זרימת מידע', run: sampleEditRate },
   { key: 'hn', label: 'Hacker News', group: 'זרימת מידע', run: readHackerNews },
-  { key: 'attention', label: 'תשומת לב ציבורית', group: 'חברה', run: readPublicAttention },
+  { key: 'trends', label: 'טרנדים חיים (10 דקות)', group: 'חברה', run: sampleLiveTrends },
+  { key: 'attention', label: 'צפיות יומיות (מפגר)', group: 'חברה', run: readPublicAttention },
   { key: 'art', label: 'יצירת היום', group: 'תרבות', run: readArtOfTheDay },
 ];
 
@@ -305,8 +375,10 @@ export function startWorldPulse() {
   startEditStream(sources.wikiStream);
   pollAll();
   setInterval(pollAll, POLL_INTERVAL_MS);
-  // קצב העריכות משתנה משנייה לשנייה — דוגמים אותו תכופות יותר מהשאר.
-  setInterval(() => runSource(registry.find((r) => r.key === 'wikiStream')), 10000);
+  // הזרם החי משתנה משנייה לשנייה — דוגמים אותו תכופות הרבה יותר מהשאר,
+  // מקומית וללא שום בקשת רשת נוספת.
+  const live = registry.filter((r) => r.key === 'wikiStream' || r.key === 'trends');
+  setInterval(() => live.forEach(runSource), 10000);
 }
 
 // התכנסות רכה בכל פריים כך שערכים חדשים אף פעם לא "קופצים" — מזג האוויר
