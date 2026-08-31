@@ -1,103 +1,145 @@
 # -*- coding: utf-8 -*-
-"""בדיקת תקינות של קובץ העבודה מול דרישות העיצוב של התרגיל."""
+"""אימות העבודה מול דרישות התרגיל ומול דרישת הערות השוליים.
 
-import os
-import unicodedata
+הרצה:  python3 check_docx.py
+"""
+
+import re
 import sys
+import unicodedata
+import zipfile
 
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
-from docx.shared import Pt
+from lxml import etree
 
-PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                    "עבודת_סיכום_הקשת_ההלנית.docx")
+W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+DOC = "עבודת_סיכום_הקשת_ההלנית.docx"
+
+# לוקטור תקין בהערת שוליים: עמוד, טווח עמודים, פסקה, פרק או איור
+LOCATOR = re.compile(r"(עמ' \d|פס' \d|פרק |תקציר|איור \d)")
+# ציטוט מוטבע שנשאר בטעות בגוף הטקסט
+INLINE_CITATION = re.compile(r"\([^()]*\b(?:19|20)\d{2}\b[^()]*(?:עמ'|פס'|תקציר|פרק)[^()]*\)")
 
 
-def has(el, tag):
-    return el is not None and el.find(qn(tag)) is not None
+def text_of(node):
+    return "".join(t.text or "" for t in node.findall(f".//{W}t"))
+
+
+def prop(ppr, tag, attr):
+    if ppr is None:
+        return None
+    el = ppr.find(f"{W}{tag}")
+    return None if el is None else el.get(f"{W}{attr}")
+
+
+def sort_key(s):
+    stripped = unicodedata.normalize("NFKD", s)
+    return "".join(c for c in stripped if not unicodedata.combining(c)).lower()
 
 
 def main():
-    doc = Document(PATH)
     problems = []
-    body_words = 0
-    body_paras = 0
-    ref_paras = 0
-    short_paras = []
+    z = zipfile.ZipFile(DOC)
+    doc = etree.fromstring(z.read("word/document.xml"))
+    notes = etree.fromstring(z.read("word/footnotes.xml"))
 
-    for p in doc.paragraphs:
-        text = p.text.strip()
-        if not text:
+    body, captions, references = [], [], []
+    in_refs = False
+    used_markers = []
+    # הערות המצורפות לכיתוב איור או לפריט ברשימת המקורות הן ייחוס של מקור,
+    # ולא טענה - ולכן אין להן מספר עמוד או פרק.
+    attribution_notes = set()
+
+    for para in doc.findall(f".//{W}p"):
+        txt = text_of(para).strip()
+        ppr = para.find(f"{W}pPr")
+        ids = [int(r.get(f"{W}id")) for r in para.findall(f".//{W}footnoteReference")]
+        used_markers.extend(ids)
+        if in_refs or txt.startswith("איור "):
+            attribution_notes.update(ids)
+        if not txt:
             continue
-        p_pr = p._p.pPr
-        is_ref = p.paragraph_format.first_line_indent is not None and \
-            p.paragraph_format.first_line_indent < 0
-
-        for run in p.runs:
-            r_pr = run._r.rPr
-            fonts = r_pr.find(qn("w:rFonts")) if r_pr is not None else None
-            if fonts is None or fonts.get(qn("w:cs")) != "Arial":
-                problems.append(f"רוץ ללא Arial ב-complex-script: {text[:40]}")
-            if run.font.name != "Arial":
-                problems.append(f"רוץ ללא Arial: {text[:40]}")
-            if not is_ref and not has(r_pr, "w:rtl"):
-                problems.append(f"רוץ עברי ללא w:rtl: {text[:40]}")
-
-        if is_ref:
-            ref_paras += 1
-            if p.runs and p.runs[0].font.size != Pt(11):
-                problems.append(f"מקור שאינו בגודל 11: {text[:40]}")
-            if p.paragraph_format.line_spacing != 1.0:
-                problems.append(f"מקור שאינו במרווח שורה בודד: {text[:40]}")
+        if txt == "רשימת מקורות":
+            in_refs = True
+            continue
+        if in_refs:
+            references.append((txt, ppr, para))
             continue
 
-        if not has(p_pr, "w:bidi"):
-            problems.append(f"פסקה ללא bidi: {text[:40]}")
+        run = para.find(f"{W}r")
+        rpr = run.find(f"{W}rPr") if run is not None else None
+        sz = None if rpr is None or rpr.find(f"{W}sz") is None else \
+            rpr.find(f"{W}sz").get(f"{W}val")
+        entry = (txt, ppr, sz)
+        (captions if txt.startswith("איור ") else body).append(entry)
 
-        size = p.runs[0].font.size if p.runs else None
-        if size == Pt(12) and p.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY:
-            body_paras += 1
-            body_words += len(text.split())
-            if text.count(".") < 3:
-                short_paras.append(text[:60])
-            if p.paragraph_format.line_spacing != 1.5:
-                problems.append(f"פסקת גוף שאינה במרווח 1.5: {text[:40]}")
+        if INLINE_CITATION.search(txt):
+            problems.append(f"ציטוט מוטבע שנשאר בגוף הטקסט: {txt[:60]}")
 
-    images = len(doc.inline_shapes)
+    # --- גוף הטקסט: Arial 12, רווח 1.5, יישור דו-צידי, RTL ---
+    for txt, ppr, sz in body:
+        if prop(ppr, "jc", "val") == "both":
+            if sz != "24":
+                problems.append(f"פסקת גוף שאינה בגודל 12: {txt[:45]}")
+            if prop(ppr, "spacing", "line") != "360":
+                problems.append(f"פסקת גוף שאינה במרווח 1.5: {txt[:45]}")
+            if len(re.findall(r"[.!?]", txt)) < 3:
+                problems.append(f"פסקה עם פחות משלושה משפטים: {txt[:45]}")
+        if ppr is None or ppr.find(f"{W}bidi") is None:
+            problems.append(f"פסקה עברית ללא כיווניות RTL: {txt[:45]}")
 
-    print(f"פסקאות גוף (Arial 12, justified): {body_paras}")
-    print(f"מילים בגוף העבודה: {body_words}")
-    print(f"פריטים ברשימת המקורות: {ref_paras}")
-    print(f"איורים מוטמעים: {images}")
-    print(f"הערכת עמודים (≈330 מילים/עמוד + איורים): "
-          f"{body_words / 330 + images * 0.55:.1f}")
-
-    refs_sorted = []
-    for p in doc.paragraphs:
-        if p.paragraph_format.first_line_indent is not None and \
-                p.paragraph_format.first_line_indent < 0:
-            refs_sorted.append(p.text.strip())
-    def sort_key(s):
-        """סדר אלפביתי לטיני - מתעלם מסימני ניקוד (Ö נחשב O)."""
-        stripped = unicodedata.normalize("NFKD", s)
-        return "".join(c for c in stripped
-                       if not unicodedata.combining(c)).lower()
-
-    if refs_sorted != sorted(refs_sorted, key=sort_key):
+    # --- רשימת מקורות: Arial 11, רווח שורה בודד, סדר אלפביתי ---
+    for txt, ppr, para in references:
+        run = para.find(f"{W}r")
+        rpr = run.find(f"{W}rPr") if run is not None else None
+        sz = None if rpr is None or rpr.find(f"{W}sz") is None else \
+            rpr.find(f"{W}sz").get(f"{W}val")
+        if sz != "22":
+            problems.append(f"מקור שאינו בגודל 11: {txt[:45]}")
+        if prop(ppr, "spacing", "line") != "240":
+            problems.append(f"מקור שאינו במרווח שורה בודד: {txt[:45]}")
+    titles = [t for t, _, _ in references]
+    if titles != sorted(titles, key=sort_key):
         problems.append("רשימת המקורות אינה בסדר אלפביתי")
 
-    if short_paras:
-        print("\nפסקאות עם פחות משלושה משפטים:")
-        for s in short_paras:
-            print("  -", s)
+    # --- הערות שוליים ---
+    footnotes = {}
+    for note in notes.findall(f"{W}footnote"):
+        nid = int(note.get(f"{W}id"))
+        if nid > 0:
+            footnotes[nid] = text_of(note).strip()
+
+    for nid, txt in footnotes.items():
+        if nid in attribution_notes:
+            continue        # ייחוס מקור של איור או הערה על פריט ביבליוגרפי
+        if not LOCATOR.search(txt):
+            problems.append(f"הערה {nid} ללא עמוד/פרק: {txt[:60]}")
+    missing = sorted(set(footnotes) - set(used_markers))
+    orphan = sorted(set(used_markers) - set(footnotes))
+    if missing:
+        problems.append(f"הערות ללא סימן בגוף המסמך: {missing}")
+    if orphan:
+        problems.append(f"סימנים ללא הערה מתאימה: {orphan}")
+
+    # --- כל מקור ברשימה מופיע בלפחות הערה אחת ---
+    all_notes = " ".join(footnotes.values())
+    for surname in ("Huguen", "Kopf", "Güneş"):
+        if surname not in all_notes:
+            problems.append(f"המקור {surname} אינו מופיע באף הערת שוליים")
+
+    print(f"פסקאות גוף:            {len(body)}")
+    print(f"כיתובי איורים:         {len(captions)}")
+    print(f"איורים מוטמעים:        {len(doc.findall(f'.//{W}drawing'))}")
+    print(f"הערות שוליים:          {len(footnotes)} "
+          f"(מהן {len(attribution_notes)} ייחוסי מקור לאיורים/ביבליוגרפיה)")
+    print(f"סימני הערה בגוף:       {len(used_markers)}")
+    print(f"פריטים ברשימת מקורות:  {len(references)}")
 
     if problems:
         print("\nבעיות שנמצאו:")
-        for pr in sorted(set(problems)):
-            print("  -", pr)
+        for item in sorted(set(problems)):
+            print("  -", item)
         return 1
-    print("\nכל בדיקות העיצוב עברו.")
+    print("\nכל הבדיקות עברו.")
     return 0
 
 
