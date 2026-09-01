@@ -18,6 +18,9 @@ import zipfile
 
 from lxml import etree
 
+from rewrites import (NEW_SUBSECTION, NEW_SUBSECTION_ANCHOR,
+                      PARAGRAPH_REWRITES, POST_INSERT_REWRITES)
+
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 w = f"{{{W}}}"
 
@@ -100,6 +103,7 @@ CITATIONS = {
     "(Huguen et al., 2006, עמ' 72)": [("Huguen", H["72"])],
     "(Huguen et al., 2006, עמ' 73)": [("Huguen", H["73"])],
     "(Huguen et al., 2006, עמ' 61, 73)": [("Huguen", H["61,73"])],
+    "(Huguen et al., 2006, עמ' 61, 65)": [("Huguen", H["61,65"])],
     "(Huguen et al., 2006, עמ' 66, 69)": [("Huguen", H["66,69"])],
     "(Huguen et al., 2006, עמ' 66–67)": [("Huguen", H["66-67"])],
     "(Huguen et al., 2006, עמ' 72–73)": [("Huguen", H["72-73"])],
@@ -117,17 +121,9 @@ CITATIONS = {
         [("Huguen", H["62"]), ("Kopf", K["5"])],
 }
 
-# תיקונים לפי מספר ההופעה במסמך. ארבע טענות צוטטו מן התקציר בלבד, אף שהן
-# מבוססות גם בגוף המאמר או בסעיף המסקנות - שם הן נחשבות מבוססות, ולא רק מוצהרות.
-OVERRIDES = {
-    # שולי היבשת שכמעט נפגשים: תקציר עמ' 61, ושוב בסעיף המסקנות עמ' 73.
-    "(Huguen et al., 2006, עמ' 73)": {0: [("Huguen", H["61,73"])]},
-    "(Huguen et al., 2006, עמ' 61)": {
-        5: [("Huguen", H["61,73"])],   # התכנסות חזיתית מול אלכסונית - גם במסקנות
-        6: [("Huguen", H["61,65"])],   # שיטות הסקר - מפורטות בגוף המבוא בעמ' 65
-        7: [("Huguen", H["61,73"])],   # שלושת הגורמים - נמנים שוב במסקנות
-    },
-}
+# אין עוד תיקונים לפי מספר הופעה: הפסקאות שנזקקו להם נכתבו מחדש עם אסימוני
+# ציטוט מפורשים, שאינם תלויים בסדר ההופעות במסמך.
+OVERRIDES = {}
 
 # ציטוט נרטיבי: השנה נשארת בגוף המשפט, רק הלוקטור עובר להערה.
 NARRATIVE = {"(2003, תקציר)": ("(2003)", [("Kopf", "תקציר (פס' 1); איור 1a")])}
@@ -198,7 +194,7 @@ INSERTIONS = [
         "שמעליו."
     ),
     (
-        "שלושת הגורמים מסבירים היטב את התצפיות שהוצגו",
+        "הממצאים שנסקרו מאפשרים לענות על שאלת העבודה",
         "שלושת הגורמים הללו נוגעים לפני השטח ולכיסוי הסדימנטרי, ומתחתם עומד "
         "גורם עמוק יותר. פילוח הלוח השוקע לפי ציפתו הוא שמייצר מלכתחילה את "
         "ההבדל בקצבי ההפחתה, שהקינמטיקה האזורית רק מבטאת: ליתוספרה יבשתית "
@@ -218,6 +214,77 @@ INSERTIONS = [
         "[מאמר בפורמט AGU, הממוספר בפסקאות ולא בעמודים]"
     ),
 ]
+
+
+def apply_rewrites(root, table):
+    """מחליף או מוחק פסקאות לפי טבלת שכתובים. None פירושו מחיקה."""
+    applied = set()
+    for para in list(root.iter(w + "p")):
+        text = "".join(t.text or "" for t in para.findall(f".//{w}t")).strip()
+        for anchor, replacement in table.items():
+            if anchor in applied or not text.startswith(anchor):
+                continue
+            applied.add(anchor)
+            if replacement is None:
+                para.getparent().remove(para)
+            else:
+                runs = para.findall(f"{w}r")
+                for extra in runs[1:]:
+                    para.remove(extra)
+                node = runs[0].find(f"{w}t")
+                node.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+                node.text = replacement
+            break
+    missing = set(table) - applied
+    if missing:
+        raise SystemExit("פסקאות שלא נמצאו לשכתוב: " + "; ".join(sorted(missing)))
+
+
+def insert_after(root, anchor, text, format_anchor=None):
+    """מוסיף פסקה אחרי פסקת העוגן, בעיצוב של פסקת העוגן או של פסקה אחרת."""
+    target = fmt_source = None
+    for para in root.iter(w + "p"):
+        body = "".join(t.text or "" for t in para.findall(f".//{w}t"))
+        if target is None and anchor in body:
+            target = para
+        if format_anchor and fmt_source is None and format_anchor in body:
+            fmt_source = para
+    if target is None:
+        raise SystemExit(f"לא נמצאה פסקת עוגן: {anchor[:40]!r}")
+    fmt_source = fmt_source if fmt_source is not None else target
+
+    new_para = etree.fromstring(etree.tostring(fmt_source))
+    for run in new_para.findall(f"{w}r"):
+        new_para.remove(run)
+    source_run = fmt_source.find(f"{w}r")
+    run = etree.SubElement(new_para, w + "r")
+    rpr = source_run.find(f"{w}rPr") if source_run is not None else None
+    if rpr is not None:
+        run.append(etree.fromstring(etree.tostring(rpr)))
+    node = etree.SubElement(run, w + "t")
+    node.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+    node.text = text
+    target.addnext(new_para)
+
+
+def apply_new_subsection(root):
+    """מוסיף את תת-פרק 5.4: הכותרת בעיצוב כותרת קיימת, הפסקה בעיצוב פסקת גוף."""
+    heading, body = NEW_SUBSECTION
+    insert_after(root, NEW_SUBSECTION_ANCHOR, heading,
+                 format_anchor="5.3 הרי בוץ וזרימת נוזלים")
+    insert_after(root, heading, body, format_anchor=NEW_SUBSECTION_ANCHOR)
+
+
+def keep_heading_with_list(root):
+    """מונע מכותרת "רשימת מקורות" להישאר לבדה בתחתית עמוד."""
+    for para in root.iter(w + "p"):
+        text = "".join(t.text or "" for t in para.findall(f".//{w}t")).strip()
+        if text == "רשימת מקורות":
+            ppr = para.find(f"{w}pPr")
+            if ppr is not None and ppr.find(f"{w}keepNext") is None:
+                keep = etree.Element(w + "keepNext")
+                ppr.insert(0, keep)
+            return
 
 
 def apply_insertions(root):
@@ -312,7 +379,11 @@ def build():
     tree = etree.parse(doc_path)
     root = tree.getroot()
 
+    apply_rewrites(root, PARAGRAPH_REWRITES)
     apply_insertions(root)
+    apply_new_subsection(root)
+    apply_rewrites(root, POST_INSERT_REWRITES)
+    keep_heading_with_list(root)
 
     for node in root.iter(w + "t"):
         for old, new in TEXT_FIX.items():
