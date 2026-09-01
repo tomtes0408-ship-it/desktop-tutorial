@@ -50,37 +50,68 @@ SHORT = {
     "Wikimedia": "Mikenorton, Wikimedia Commons",
 }
 
-# ציטוט מוטבע -> (מפתח המקור, הלוקטור). הלוקטורים מועתקים מעבודת הבסיס.
-CITATIONS = {
-    "(Huguen et al., 2006, עמ' 61)": [("Huguen", "עמ' 61")],
-    "(Huguen et al., 2006, עמ' 62)": [("Huguen", "עמ' 62")],
-    "(Huguen et al., 2006, עמ' 66)": [("Huguen", "עמ' 66")],
-    "(Huguen et al., 2006, עמ' 67)": [("Huguen", "עמ' 67")],
-    "(Huguen et al., 2006, עמ' 69)": [("Huguen", "עמ' 69")],
-    "(Huguen et al., 2006, עמ' 71)": [("Huguen", "עמ' 71")],
-    "(Huguen et al., 2006, עמ' 72)": [("Huguen", "עמ' 72")],
-    "(Huguen et al., 2006, עמ' 73)": [("Huguen", "עמ' 73")],
-    "(Huguen et al., 2006, עמ' 61, 73)": [("Huguen", "עמ' 61, 73")],
-    "(Huguen et al., 2006, עמ' 66, 69)": [("Huguen", "עמ' 66, 69")],
-    "(Huguen et al., 2006, עמ' 66–67)": [("Huguen", "עמ' 66–67")],
-    "(Huguen et al., 2006, עמ' 72–73)": [("Huguen", "עמ' 72–73")],
-    "(Kopf et al., 2003, תקציר)": [("Kopf", "תקציר")],
-    "(Kopf et al., 2003, פס' 5)": [("Kopf", "פס' 5")],
-    "(Kopf et al., 2003, פס' 6)": [("Kopf", "פס' 6")],
-    "(Kopf et al., 2003, איור 1)": [("Kopf", "איור 1")],
-    "(Kopf et al., 2003, פרק הדיון)": [("Kopf", "פרק הדיון")],
-    "(Kastens, 1991, כפי שמצוטט אצל Kopf et al., 2003, פס' 3)": [("Kastens", "פס' 3")],
-    "(Huguen et al., 2006, עמ' 62; Kopf et al., 2003, פס' 5)":
-        [("Huguen", "עמ' 62"), ("Kopf", "פס' 5")],
+# הלוקטורים אומתו אחד-אחד מול קובצי ה-PDF של המאמרים. הפרק מצוין לצד העמוד.
+# Huguen et al. הוא מאמר ממוספר עמודים (61–75); Kopf et al. הוא מאמר AGU
+# הממוספר בפסקאות, ולכן הלוקטור שלו הוא מספר פסקה וסעיף.
+H = {
+    "61": "עמ' 61 (תקציר ומבוא)",
+    "62": "עמ' 62 (מבוא)",
+    "66": "עמ' 66 (סעיף General morphologic and backscatter characteristics)",
+    "67": "עמ' 67 (סעיף The Western Mediterranean Ridge)",
+    "69": "עמ' 69 (סעיף The Western Mediterranean Ridge)",
+    "71": "עמ' 71 (סעיף The Central Mediterranean Ridge)",
+    "72": "עמ' 72 (סעיף The Central Mediterranean Ridge)",
+    "73": "עמ' 73 (סעיף Conclusion)",
+    "61,73": "עמ' 61 ו-73 (תקציר וסעיף Conclusion)",
+    "66,69": "עמ' 66 ו-69 (הסעיפים General morphologic "
+             "ו-The Western Mediterranean Ridge)",
+    "66-67": "עמ' 66–67 (סעיף General morphologic and backscatter characteristics)",
+    "72-73": "עמ' 72–73 (הסעיפים The Eastern Mediterranean Ridge ו-Conclusion)",
+}
+K = {
+    "abs": "תקציר (פס' 1)",
+    "5": "פס' 5 (סעיף 2.1, Accretionary Complex)",
+    "6": "פס' 6 (סעיף 2.1, Accretionary Complex)",
+    "42": "פס' 42 (סעיף 6, Discussion)",
+    "fig1": "איור 1a",
 }
 
+CITATIONS = {
+    "(Huguen et al., 2006, עמ' 61)": [("Huguen", H["61"])],
+    "(Huguen et al., 2006, עמ' 62)": [("Huguen", H["62"])],
+    "(Huguen et al., 2006, עמ' 66)": [("Huguen", H["66"])],
+    "(Huguen et al., 2006, עמ' 67)": [("Huguen", H["67"])],
+    "(Huguen et al., 2006, עמ' 69)": [("Huguen", H["69"])],
+    "(Huguen et al., 2006, עמ' 71)": [("Huguen", H["71"])],
+    "(Huguen et al., 2006, עמ' 72)": [("Huguen", H["72"])],
+    "(Huguen et al., 2006, עמ' 73)": [("Huguen", H["73"])],
+    "(Huguen et al., 2006, עמ' 61, 73)": [("Huguen", H["61,73"])],
+    "(Huguen et al., 2006, עמ' 66, 69)": [("Huguen", H["66,69"])],
+    "(Huguen et al., 2006, עמ' 66–67)": [("Huguen", H["66-67"])],
+    "(Huguen et al., 2006, עמ' 72–73)": [("Huguen", H["72-73"])],
+    "(Kopf et al., 2003, תקציר)": [("Kopf", K["abs"])],
+    "(Kopf et al., 2003, פס' 5)": [("Kopf", K["5"])],
+    "(Kopf et al., 2003, פס' 6)": [("Kopf", K["6"])],
+    "(Kopf et al., 2003, איור 1)": [("Kopf", K["fig1"])],
+    "(Kopf et al., 2003, פרק הדיון)": [("Kopf", K["42"])],
+    "(Kastens, 1991, כפי שמצוטט אצל Kopf et al., 2003, פס' 3)":
+        [("Kastens", "פס' 2 (סעיף 1, Introduction)")],
+    "(Huguen et al., 2006, עמ' 62; Kopf et al., 2003, פס' 5)":
+        [("Huguen", H["62"]), ("Kopf", K["5"])],
+}
+
+# תיקון לפי הופעה: הטענה על שולי היבשת שכמעט נפגשים מנוסחת בתקציר (עמ' 61),
+# ולא בעמ' 73 שאליו הפנתה עבודת הבסיס.
+OVERRIDES = {"(Huguen et al., 2006, עמ' 73)": {0: [("Huguen", "עמ' 61 (תקציר)")]}}
+
 # ציטוט נרטיבי: השנה נשארת בגוף המשפט, רק הלוקטור עובר להערה.
-NARRATIVE = {"(2003, תקציר)": ("(2003)", [("Kopf", "תקציר")])}
+NARRATIVE = {"(2003, תקציר)": ("(2003)", [("Kopf", "תקציר (פס' 1); איור 1a")])}
 
 # כיתובי האיורים: הערת שוליים נוספת בסוף הכיתוב, מעבר לשורת "מקור:" שנשארת בו.
 CAPTION_NOTES = {
     "איור 1": [("Wikimedia", "")],
-    "איור 2": [("Gunes", "")],
+    "איור 2": [("Gunes", "איור 21, עמ' 315; הפאנל המערבי שבו לקוח "
+                         "אצל המחברים מ-Dal Cin et al. (2016)")],
 }
 
 PUNCT = ".,;:"
@@ -96,7 +127,10 @@ def make_footnote_text(entries, used):
         if not locator:
             parts.append(book)
         else:
-            parts.append(f"{book}. {locator}" if first else f"{book}, {locator}")
+            # אחרי הפניה ביבליוגרפית מלאה הלוקטור הוא משפט נפרד; אחרי צורה
+            # מקוצרת הוא ממשיך את המשפט.
+            joiner = ". " if first and book[-1].isdigit() else ", "
+            parts.append(book + joiner + locator)
     return "; ".join(parts) + "."
 
 
@@ -172,11 +206,16 @@ def build():
         names = z.namelist()
         z.extractall(BUILD)
 
+    CAPTION_FIX = {
+        "מקור: Güneş et al. (2018), Marine and Petroleum Geology.":
+            "מקור: Güneş et al. (2018), איור 21, עמ' 315.",
+    }
     doc_path = os.path.join(BUILD, "word", "document.xml")
     tree = etree.parse(doc_path)
     root = tree.getroot()
 
     footnotes = []          # (id, text)
+    seen_counts = {}        # לספירת הופעות, עבור OVERRIDES
     used_sources = set()
     next_id = 1
     in_references = False
@@ -198,6 +237,9 @@ def build():
             if t is None or not t.text:
                 continue
             text = t.text
+            for old, new in CAPTION_FIX.items():
+                if old in text:
+                    text = t.text = text.replace(old, new)
             hits = []
             for cite in sorted(list(CITATIONS) + list(NARRATIVE), key=len, reverse=True):
                 start = 0
@@ -222,6 +264,10 @@ def build():
                     keep, entries = NARRATIVE[cite]
                 else:
                     entries = CITATIONS[cite]
+                    seen_counts[cite] = seen_counts.get(cite, -1) + 1
+                    override = OVERRIDES.get(cite, {}).get(seen_counts[cite])
+                    if override:
+                        entries = override
                     if cut > 0 and text[cut - 1] == " ":
                         cut -= 1        # גם הרווח שלפני הסוגריים יורד
                 tail = end
