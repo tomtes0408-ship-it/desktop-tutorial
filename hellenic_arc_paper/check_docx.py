@@ -122,7 +122,7 @@ def main():
 
     # --- כל מקור ברשימה מופיע בלפחות הערה אחת ---
     all_notes = " ".join(footnotes.values())
-    for surname in ("Huguen", "Kopf", "Güneş"):
+    for surname in ("Huguen", "Kopf", "Güneş", "Royden"):
         if surname not in all_notes:
             problems.append(f"המקור {surname} אינו מופיע באף הערת שוליים")
 

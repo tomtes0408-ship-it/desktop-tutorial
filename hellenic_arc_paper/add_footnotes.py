@@ -38,6 +38,9 @@ FULL = {
     "Gunes": "Güneş, P., Aksu, A. E., & Hall, J. (2018). Internal seismic stratigraphy "
              "of the Messinian evaporites across the eastern Mediterranean Sea. "
              "Marine and Petroleum Geology, 91, 297–320",
+    "Royden": "Royden, L. H., & Papanikolaou, D. J. (2011). Slab segmentation and "
+              "late Cenozoic disruption of the Hellenic arc. Geochemistry, Geophysics, "
+              "Geosystems, 12(3), Q03010",
     "Kastens": "Kastens (1991), כפי שמצוטט אצל Kopf et al. (2003)",
     "Wikimedia": "Mikenorton, Hellenic subduction zone, Wikimedia Commons, "
                  "רישיון CC BY-SA 3.0",
@@ -46,7 +49,11 @@ SHORT = {
     "Huguen": "Huguen et al. (2006)",
     "Kopf": "Kopf et al. (2003)",
     "Gunes": "Güneş et al. (2018)",
+    "Royden": "Royden, L. H., & Papanikolaou, D. J. (2011). Slab segmentation and "
+              "late Cenozoic disruption of the Hellenic arc. Geochemistry, Geophysics, "
+              "Geosystems, 12(3), Q03010",
     "Kastens": "Kastens (1991), כפי שמצוטט אצל Kopf et al. (2003)",
+    "Royden": "Royden & Papanikolaou (2011)",
     "Wikimedia": "Mikenorton, Wikimedia Commons",
 }
 
@@ -77,6 +84,12 @@ K = {
     "fig1": "איור 1a",
 }
 
+R = {
+    "abs": "תקציר (פס' 1)",
+    "7": "פס' 7 (סעיף 2.1, Active Subduction)",
+    "38": "פס' 38 (סעיף 3.2.2, Model Results)",
+}
+
 CITATIONS = {
     "(Huguen et al., 2006, עמ' 61)": [("Huguen", H["61"])],
     "(Huguen et al., 2006, עמ' 62)": [("Huguen", H["62"])],
@@ -90,6 +103,9 @@ CITATIONS = {
     "(Huguen et al., 2006, עמ' 66, 69)": [("Huguen", H["66,69"])],
     "(Huguen et al., 2006, עמ' 66–67)": [("Huguen", H["66-67"])],
     "(Huguen et al., 2006, עמ' 72–73)": [("Huguen", H["72-73"])],
+    "(Royden & Papanikolaou, 2011, תקציר)": [("Royden", R["abs"])],
+    "(Royden & Papanikolaou, 2011, פס' 7)": [("Royden", R["7"])],
+    "(Royden & Papanikolaou, 2011, פס' 38)": [("Royden", R["38"])],
     "(Kopf et al., 2003, תקציר)": [("Kopf", K["abs"])],
     "(Kopf et al., 2003, פס' 5)": [("Kopf", K["5"])],
     "(Kopf et al., 2003, פס' 6)": [("Kopf", K["6"])],
@@ -162,6 +178,74 @@ def rpr_for_reference(rpr):
     return new
 
 
+# פסקאות חדשות. כל פסקה מוכנסת אחרי הפסקה שהעוגן מזהה, ונבנית בשכפול העיצוב
+# של אותה פסקה - כך שאין הגדרת עיצוב חדשה שעלולה לסטות מן הקיים. הציטוטים
+# נכתבים בתחביר המוטבע הרגיל, ועוברים דרך אותו צינור המרה להערות שוליים.
+INSERTIONS = [
+    (
+        "הקינמטיקה של המערכת אינה אחידה לאורך הקשת",
+        "השונות הקינמטית הזו אינה שרירותית, ומקורה בהרכב הליתוספרה הנכנסת "
+        "להפחתה. מדידות GPS מראות התכנסות של כ-35 מ\"מ לשנה לרוחב ההלנידים "
+        "הדרומיים, בין אפריקה לבין נקודות בלוח האגאי הרוכב "
+        "(Royden & Papanikolaou, 2011, פס' 7). קצב זה אינו אחיד לאורך הקשת. "
+        "מצפון לאזור העתק קפלוניה שוקעת ליתוספרה יבשתית אדריאטית בקצב של "
+        "5–10 מ\"מ לשנה בלבד, ואילו מדרומו שוקעת ליתוספרה אוקיינית יונית, "
+        "צפופה הרבה יותר, בקצב של כ-35 מ\"מ לשנה "
+        "(Royden & Papanikolaou, 2011, תקציר). ההבדל בין המקטעים גדול דיו כדי "
+        "להסיט את חזית ההפחתה עצמה: היא מוסטת בהיסט ימני של 100–120 ק\"מ "
+        "לרוחב אזור העתק קפלוניה (Royden & Papanikolaou, 2011, תקציר). השונות "
+        "לאורך הקשת מתחילה אפוא בציפת הלוח השוקע, ולא רק בכיסוי הסדימנטרי "
+        "שמעליו."
+    ),
+    (
+        "שלושת הגורמים מסבירים היטב את התצפיות שהוצגו",
+        "שלושת הגורמים הללו נוגעים לפני השטח ולכיסוי הסדימנטרי, ומתחתם עומד "
+        "גורם עמוק יותר. פילוח הלוח השוקע לפי ציפתו הוא שמייצר מלכתחילה את "
+        "ההבדל בקצבי ההפחתה, שהקינמטיקה האזורית רק מבטאת: ליתוספרה יבשתית "
+        "וציפה מצפון מול ליתוספרה אוקיינית וצפופה מדרום "
+        "(Royden & Papanikolaou, 2011, תקציר). הגבול בין שני המקטעים, אזור "
+        "העתק קפלוניה, הוא צעיר יחסית. מודלים גיאודינמיים מתארכים את היווצרותו "
+        "ל-6–8 מיליון שנה, ורוב ההפרדה בין חזיתות ההפחתה התרחשה אחרי 5 מיליון "
+        "שנה (Royden & Papanikolaou, 2011, פס' 38) — פרק זמן החופף להתפתחותה "
+        "הפוסט-מסינית של המנסרה. הגורם הקינמטי אינו עומד אפוא בפני עצמו, אלא "
+        "הוא עצמו תוצאה של מה שנכנס לתעלת ההפחתה."
+    ),
+    (
+        "Kopf, A., Mascle, J., & Klaeschen, D. (2003)",
+        "Royden, L. H., & Papanikolaou, D. J. (2011). Slab segmentation and late "
+        "Cenozoic disruption of the Hellenic arc. Geochemistry, Geophysics, "
+        "Geosystems, 12(3), Q03010. https://doi.org/10.1029/2010GC003280 "
+        "[מאמר בפורמט AGU, הממוספר בפסקאות ולא בעמודים]"
+    ),
+]
+
+
+def apply_insertions(root):
+    """מוסיף את הפסקאות החדשות, בשכפול עיצובה של פסקת העוגן."""
+    for anchor, body in INSERTIONS:
+        target = None
+        for para in root.iter(w + "p"):
+            text = "".join(t.text or "" for t in para.findall(f".//{w}t"))
+            if anchor in text:
+                target = para
+                break
+        if target is None:
+            raise SystemExit(f"לא נמצאה פסקת עוגן: {anchor[:40]!r}")
+
+        new_para = etree.fromstring(etree.tostring(target))
+        for run in new_para.findall(f"{w}r"):
+            new_para.remove(run)
+        source_run = target.find(f"{w}r")
+        run = etree.SubElement(new_para, w + "r")
+        rpr = source_run.find(f"{w}rPr") if source_run is not None else None
+        if rpr is not None:
+            run.append(etree.fromstring(etree.tostring(rpr)))
+        node = etree.SubElement(run, w + "t")
+        node.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+        node.text = body
+        target.addnext(new_para)
+
+
 def normalize_reference_list(root, footnotes, next_id, rpr_sample):
     """הופך את פריטי רשימת המקורות לפסקאות משמאל לימין.
 
@@ -227,6 +311,8 @@ def build():
     doc_path = os.path.join(BUILD, "word", "document.xml")
     tree = etree.parse(doc_path)
     root = tree.getroot()
+
+    apply_insertions(root)
 
     for node in root.iter(w + "t"):
         for old, new in TEXT_FIX.items():
