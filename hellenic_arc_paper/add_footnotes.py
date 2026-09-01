@@ -31,7 +31,7 @@ FULL = {
     "Huguen": "Huguen, C., Chamot-Rooke, N., Loubrieu, B., & Mascle, J. (2006). "
               "Morphology of a pre-collisional, salt-bearing, accretionary complex: "
               "The Mediterranean Ridge (Eastern Mediterranean). "
-              "Marine Geophysical Research, 27(1), 61–75",
+              "Marine Geophysical Researches, 27(1), 61–75",
     "Kopf": "Kopf, A., Mascle, J., & Klaeschen, D. (2003). The Mediterranean Ridge: "
             "A mass balance across the fastest growing accretionary complex on Earth. "
             "Journal of Geophysical Research: Solid Earth, 108(B8), 2372",
@@ -115,6 +115,15 @@ CAPTION_NOTES = {
 }
 
 PUNCT = ".,;:"
+
+# תיקוני טקסט שחלים על כל המסמך, כולל רשימת המקורות.
+# שם כתב העת של Huguen et al. הוא "Marine Geophysical Researches" - כך הוא
+# מודפס בראש עמ' 61 של המאמר. השם השתנה ל-"Research" רק ב-2010.
+TEXT_FIX = {
+    "Marine Geophysical Research,": "Marine Geophysical Researches,",
+    "מקור: Güneş et al. (2018), Marine and Petroleum Geology.":
+        "מקור: Güneş et al. (2018), איור 21, עמ' 315.",
+}
 
 
 def make_footnote_text(entries, used):
@@ -206,13 +215,14 @@ def build():
         names = z.namelist()
         z.extractall(BUILD)
 
-    CAPTION_FIX = {
-        "מקור: Güneş et al. (2018), Marine and Petroleum Geology.":
-            "מקור: Güneş et al. (2018), איור 21, עמ' 315.",
-    }
     doc_path = os.path.join(BUILD, "word", "document.xml")
     tree = etree.parse(doc_path)
     root = tree.getroot()
+
+    for node in root.iter(w + "t"):
+        for old, new in TEXT_FIX.items():
+            if node.text and old in node.text:
+                node.text = node.text.replace(old, new)
 
     footnotes = []          # (id, text)
     seen_counts = {}        # לספירת הופעות, עבור OVERRIDES
@@ -237,9 +247,6 @@ def build():
             if t is None or not t.text:
                 continue
             text = t.text
-            for old, new in CAPTION_FIX.items():
-                if old in text:
-                    text = t.text = text.replace(old, new)
             hits = []
             for cite in sorted(list(CITATIONS) + list(NARRATIVE), key=len, reverse=True):
                 start = 0
