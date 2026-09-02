@@ -39,8 +39,8 @@ FULL = {
             "A mass balance across the fastest growing accretionary complex on Earth. "
             "Journal of Geophysical Research: Solid Earth, 108(B8), 2372",
     "Gunes": "Güneş, P., Aksu, A. E., & Hall, J. (2018). Internal seismic stratigraphy "
-             "of the Messinian evaporites across the eastern Mediterranean Sea. "
-             "Marine and Petroleum Geology, 91, 297–320",
+             "of the Messinian evaporites across the northern sector of the eastern "
+             "Mediterranean Sea. Marine and Petroleum Geology, 91, 297–320",
     "Royden": "Royden, L. H., & Papanikolaou, D. J. (2011). Slab segmentation and "
               "late Cenozoic disruption of the Hellenic arc. Geochemistry, Geophysics, "
               "Geosystems, 12(3), Q03010",
@@ -81,6 +81,7 @@ H = {
 }
 K = {
     "abs": "תקציר (פס' 1)",
+    "2": "פס' 2 (סעיף 1, Introduction)",
     "5": "פס' 5 (סעיף 2.1, Accretionary Complex)",
     "6": "פס' 6 (סעיף 2.1, Accretionary Complex)",
     "42": "פס' 42 (סעיף 6, Discussion)",
@@ -111,6 +112,7 @@ CITATIONS = {
     "(Royden & Papanikolaou, 2011, פס' 7)": [("Royden", R["7"])],
     "(Royden & Papanikolaou, 2011, פס' 38)": [("Royden", R["38"])],
     "(Kopf et al., 2003, תקציר)": [("Kopf", K["abs"])],
+    "(Kopf et al., 2003, פס' 2)": [("Kopf", K["2"])],
     "(Kopf et al., 2003, פס' 5)": [("Kopf", K["5"])],
     "(Kopf et al., 2003, פס' 6)": [("Kopf", K["6"])],
     "(Kopf et al., 2003, איור 1)": [("Kopf", K["fig1"])],
@@ -142,6 +144,11 @@ PUNCT = ".,;:"
 # מודפס בראש עמ' 61 של המאמר. השם השתנה ל-"Research" רק ב-2010.
 TEXT_FIX = {
     "Marine Geophysical Research,": "Marine Geophysical Researches,",
+    # שם המאמר בשער: "...across the northern sector of the eastern Mediterranean Sea".
+    # מסמך הבסיס השמיט את "the northern sector of".
+    "Messinian evaporites across the eastern Mediterranean Sea":
+        "Messinian evaporites across the northern sector of the eastern "
+        "Mediterranean Sea",
     "מקור: Güneş et al. (2018), Marine and Petroleum Geology.":
         "מקור: Güneş et al. (2018), איור 21, עמ' 315.",
 }
