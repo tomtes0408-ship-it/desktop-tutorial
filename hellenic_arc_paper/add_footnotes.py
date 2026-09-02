@@ -78,6 +78,7 @@ H = {
              "ו-The Western Mediterranean Ridge)",
     "66-67": "עמ' 66–67 (סעיף General morphologic and backscatter characteristics)",
     "72-73": "עמ' 72–73 (הסעיפים The Eastern Mediterranean Ridge ו-Conclusion)",
+    "72e": "עמ' 72 (סעיף The Eastern Mediterranean Ridge)",
 }
 K = {
     "abs": "תקציר (פס' 1)",
@@ -108,6 +109,7 @@ CITATIONS = {
     "(Huguen et al., 2006, עמ' 66, 69)": [("Huguen", H["66,69"])],
     "(Huguen et al., 2006, עמ' 66–67)": [("Huguen", H["66-67"])],
     "(Huguen et al., 2006, עמ' 72–73)": [("Huguen", H["72-73"])],
+    "(Huguen et al., 2006, עמ' 72, מזרח)": [("Huguen", H["72e"])],
     "(Royden & Papanikolaou, 2011, תקציר)": [("Royden", R["abs"])],
     "(Royden & Papanikolaou, 2011, פס' 7)": [("Royden", R["7"])],
     "(Royden & Papanikolaou, 2011, פס' 38)": [("Royden", R["38"])],
@@ -135,6 +137,7 @@ CAPTION_NOTES = {
     "איור 1": [("Wikimedia", "")],
     "איור 2": [("Gunes", "איור 21, עמ' 315; הפאנל המערבי שבו לקוח "
                          "אצל המחברים מ-Dal Cin et al. (2016)")],
+    "איור 3": [("Huguen", "איור 4, עמ' 65")],
 }
 
 PUNCT = ".,;:"
@@ -186,6 +189,28 @@ def rpr_for_reference(rpr):
 # נכתבים בתחביר המוטבע הרגיל, ועוברים דרך אותו צינור המרה להערות שוליים.
 INSERTIONS = [
     (
+        "שקעי פליני וסטראבו אינם תעלות רציפות",
+        "מבנה אזור ה-Backstop שבין שקע פליני לשקע סטראבו מוסיף נדבך לתמונה. "
+        "בין שני השקעים משתרע שטח דמוי רמה, המשופע קלות צפונה ומאופיין "
+        "במבנים גדולים דמויי אונה שפורשו כדפורמציה כבידתית. לצידו מתנשאים "
+        "הרי סטראבו, שרשרת מבנים בתימטריים מסיביים בכיוון כללי N60, שנקרעו "
+        "משולי כרתים (Huguen et al., 2006, עמ' 72, מזרח). הגזירה לאורך הזרוע "
+        "המזרחית מרוכזת בשני מגעים בלבד. האחד הוא הגבול בין שולי כרתים לאזור "
+        "ה-Backstop, המתבטא בשקע פליני, והשני הוא המגע בין הרי סטראבו לתחום "
+        "הפנימי של המנסרה, המתבטא בשקע סטראבו (Huguen et al., 2006, עמ' 73). "
+        "השקעים מסמנים את קווי הגזירה של המערכת, ולא רק את השפלים שבין "
+        "הרכסים."
+    ),
+    (
+        "מבנה אזור ה-Backstop שבין שקע פליני לשקע סטראבו",
+        "מערכת השקעים אינה סימטרית סביב המנסרה. מצפון תוחם אותה שקע מטפן, "
+        "העובר למרגלות המדרון היבשתי האגאי (Huguen et al., 2006, עמ' 66). "
+        "מדרום, מול המדרון הלובי התלול, אין שקע כלל, אלא תעלה צרה "
+        "ושטוחת-קרקעית בעומק ממוצע של כ-2,800 מטר "
+        "(Huguen et al., 2006, עמ' 62). האסימטריה הזו חוזרת על עצמה בכל חתך "
+        "רוחב של המערכת."
+    ),
+    (
         "הקינמטיקה של המערכת אינה אחידה לאורך הקשת",
         "השונות הקינמטית הזו אינה שרירותית, ומקורה בהרכב הליתוספרה הנכנסת "
         "להפחתה. מדידות GPS מראות התכנסות של כ-35 מ\"מ לשנה לרוחב ההלנידים "
@@ -221,6 +246,133 @@ INSERTIONS = [
         "[מאמר בפורמט AGU, הממוספר בפסקאות ולא בעמודים]"
     ),
 ]
+
+
+# --- איור 3: תמונה חדשה שאינה קיימת בעבודת הבסיס -----------------------------
+# איור 4 של Huguen et al. (2006), עמ' 65, חולץ מקובץ ה-PDF של המאמר.
+FIGURE3_PNG = os.path.join(HERE, "sources", "huguen_fig4.png")
+FIGURE3_ANCHOR = "המנסרה, את ה-Backstop ואת אונות המלח שגלשו מעליו"
+FIGURE3_WIDTH_CM = 13.6          # מנורמל בהמשך ב-set_figure_widths
+FIGURE3_CAPTION = (
+    "איור 3: תצוגה בתימטרית תלת-ממדית של הזרוע המערבית של מנסרת ים התיכון ושל "
+    "אזור ה-Backstop שמצפון לה. באיור נראים שלושת המרכיבים שנדונו בפרק זה. "
+    "הראשון הוא מגע המנסרה-Backstop, שלאורכו מרוכזים הרי הבוץ. השני הוא אונת "
+    "מלח כבידתית שגלשה מעל ה-Backstop. השלישי הוא אגני הבקע (cleft basins), "
+    "שקערוריות עמוקות בסמוך לאותו מגע. סולם הצבעים מציג עומקי מים שבין 2,200 "
+    "ל-4,000 מטר. מקור: Huguen et al. (2006), איור 4, עמ' 65."
+)
+
+WP = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+A = "http://schemas.openxmlformats.org/drawingml/2006/main"
+PIC = "http://schemas.openxmlformats.org/drawingml/2006/picture"
+R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+
+DRAWING = """<w:p xmlns:w="{W}" xmlns:wp="{WP}" xmlns:r="{R}">
+ <w:pPr><w:keepNext/><w:spacing w:after="40" w:before="140"/>
+        <w:jc w:val="center"/></w:pPr>
+ <w:r><w:drawing>
+  <wp:inline distT="0" distB="0" distL="0" distR="0">
+   <wp:extent cx="{cx}" cy="{cy}"/>
+   <wp:effectExtent t="0" r="0" b="0" l="0"/>
+   <wp:docPr id="3" name="" descr="" title=""/>
+   <wp:cNvGraphicFramePr>
+    <a:graphicFrameLocks xmlns:a="{A}" noChangeAspect="1"/>
+   </wp:cNvGraphicFramePr>
+   <a:graphic xmlns:a="{A}">
+    <a:graphicData uri="{PIC}">
+     <pic:pic xmlns:pic="{PIC}">
+      <pic:nvPicPr><pic:cNvPr id="0" name="" descr=""/>
+       <pic:cNvPicPr><a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+       </pic:cNvPicPr></pic:nvPicPr>
+      <pic:blipFill><a:blip r:embed="{rid}" cstate="none"/><a:srcRect/>
+       <a:stretch><a:fillRect/></a:stretch></pic:blipFill>
+      <pic:spPr bwMode="auto"><a:xfrm><a:off x="0" y="0"/>
+       <a:ext cx="{cx}" cy="{cy}"/></a:xfrm>
+       <a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>
+     </pic:pic></a:graphicData></a:graphic></wp:inline>
+ </w:drawing></w:r></w:p>"""
+
+
+def _png_size(path):
+    with open(path, "rb") as fh:
+        head = fh.read(24)
+    return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
+
+
+# רוחב לכל איור בנפרד. איור 1 הוא מפה סכמטית עם תוויות גדולות ועומד בהקטנה;
+# איורים 2 ו-3 נושאים תוויות עדינות וזקוקים לרוחב מלא יותר.
+FIGURE_WIDTHS_CM = (9.4, 12.6, 12.6)
+
+
+def set_figure_widths(root, widths_cm=FIGURE_WIDTHS_CM):
+    """קובע את רוחב כל איור ומשמר את יחס הצדדים.
+
+    האיורים הגיעו במידות שונות. הרוחב נקבע כאן במפורש, גם כדי לסדר אותם
+    ויזואלית וגם כדי לשמור על העבודה בתוך מגבלת עשרת העמודים.
+    """
+    for inline, width_cm in zip(root.iter(f"{{{WP}}}inline"), widths_cm):
+        target = int(width_cm * 360000)
+        extent = inline.find(f"{{{WP}}}extent")
+        cx, cy = int(extent.get("cx")), int(extent.get("cy"))
+        new_cy = int(cy * target / cx)
+        extent.set("cx", str(target))
+        extent.set("cy", str(new_cy))
+        for ext in inline.iter(f"{{{A}}}ext"):
+            ext.set("cx", str(target))
+            ext.set("cy", str(new_cy))
+
+
+def insert_figure3(root, build_dir):
+    """מוסיף את איור 3 ואת כיתובו אחרי הפסקה שמפנה אליו.
+
+    התמונה נכתבת אל word/media, נרשמת ב-document.xml.rels, ומוכנסת כפסקת
+    ציור ממורכזת. הכיתוב נבנה בשכפול עיצובו של כיתוב איור 2 הקיים, כדי שלא
+    תיווצר הגדרת עיצוב שנייה שעלולה לסטות ממנו.
+    """
+    media_dir = os.path.join(build_dir, "word", "media")
+    os.makedirs(media_dir, exist_ok=True)
+    shutil.copy(FIGURE3_PNG, os.path.join(media_dir, "huguen_fig4.png"))
+
+    rels_path = os.path.join(build_dir, "word", "_rels", "document.xml.rels")
+    rels = etree.parse(rels_path)
+    ns = rels.getroot().nsmap[None]
+    taken = {el.get("Id") for el in rels.getroot()}
+    rid = next(f"rId{n}" for n in range(100, 999) if f"rId{n}" not in taken)
+    el = etree.SubElement(rels.getroot(), f"{{{ns}}}Relationship")
+    el.set("Id", rid)
+    el.set("Type", f"{R}/image")
+    el.set("Target", "media/huguen_fig4.png")
+    rels.write(rels_path, xml_declaration=True, encoding="UTF-8", standalone=True)
+
+    px_w, px_h = _png_size(FIGURE3_PNG)
+    cx = int(FIGURE3_WIDTH_CM * 360000)
+    cy = int(cx * px_h / px_w)
+
+    anchor = fmt_source = None
+    for para in root.iter(w + "p"):
+        body = "".join(t.text or "" for t in para.findall(f".//{w}t"))
+        if anchor is None and FIGURE3_ANCHOR in body:
+            anchor = para
+        if fmt_source is None and body.strip().startswith("איור 2:"):
+            fmt_source = para
+    if anchor is None or fmt_source is None:
+        raise SystemExit("לא נמצאה פסקת העוגן או כיתוב איור 2 לשכפול העיצוב")
+
+    caption = etree.fromstring(etree.tostring(fmt_source))
+    for run in caption.findall(f"{w}r"):
+        caption.remove(run)
+    run = etree.SubElement(caption, w + "r")
+    rpr = fmt_source.find(f"{w}r/{w}rPr")
+    if rpr is not None:
+        run.append(etree.fromstring(etree.tostring(rpr)))
+    node = etree.SubElement(run, w + "t")
+    node.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+    node.text = FIGURE3_CAPTION
+
+    picture = etree.fromstring(DRAWING.format(W=W, WP=WP, A=A, PIC=PIC, R=R,
+                                              rid=rid, cx=cx, cy=cy))
+    anchor.addnext(caption)
+    anchor.addnext(picture)
 
 
 def apply_rewrites(root, table):
@@ -390,6 +542,8 @@ def build():
     apply_insertions(root)
     apply_new_subsection(root)
     apply_rewrites(root, POST_INSERT_REWRITES)
+    insert_figure3(root, BUILD)
+    set_figure_widths(root)
     keep_heading_with_list(root)
 
     for node in root.iter(w + "t"):
