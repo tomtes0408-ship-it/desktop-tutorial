@@ -122,9 +122,14 @@ QUOTES = {
  18: [
 ("kopf", 5,
       "However, with ongoing accretion in the Plio-Quaternary this "
-      "deformation front migrated southward")
+      "deformation front migrated southward, so that the present-day "
+      "Hellenic Trench is not a deep-sea trench in the strictest sense, "
+      "but a forearc depression with very little sedimentary infill")
 ],
  19: [
+("huguen", 72,
+      "composed by a set of disconnected ''en echelon'' distributed deep "
+      "troughs with a general NE-SW trend"),
 ("huguen", 73,
       "Both trenches are composed of successive wide and partly "
       "sedimented basins, en echelon arranged, and clearly representative "
