@@ -493,6 +493,45 @@ def apply_insertions(root):
         target.addnext(new_para)
 
 
+# ב-APA שם כתב העת ומספר הכרך מודגשים בנטוי; מספר החוברת והעמודים נשארים
+# זקופים. כל מחרוזת כאן מופיעה בדיוק פעם אחת בפריט שלה ברשימת המקורות.
+REFERENCE_ITALICS = (
+    "Marine and Petroleum Geology, 91",
+    "Marine Geophysical Researches, 27",
+    "Journal of Geophysical Research: Solid Earth, 108",
+    "Geochemistry, Geophysics, Geosystems, 12",
+)
+
+
+def italicize_journal(para, node, rpr_sample):
+    """מפצל פריט ברשימת המקורות לשלוש ריצות, כדי שהכרך ושם כתב העת יהיו בנטוי."""
+    text = node.text or ""
+    span = next((s for s in REFERENCE_ITALICS if s in text), None)
+    if span is None:
+        return
+    head, _, tail = text.partition(span)
+    run = node.getparent()
+    rpr = run.find(f"{w}rPr")
+    base = rpr if rpr is not None else rpr_sample
+    node.text = head
+    index = list(para).index(run)
+    for offset, (chunk, italic) in enumerate(((span, True), (tail, False)), start=1):
+        if not chunk:
+            continue
+        new_run = etree.Element(w + "r")
+        new_rpr = etree.fromstring(etree.tostring(base))
+        for tag in ("i", "iCs"):
+            el = new_rpr.find(f"{w}{tag}")
+            if el is None:
+                el = etree.SubElement(new_rpr, w + tag)
+            el.set(w + "val", "true" if italic else "false")
+        new_run.append(new_rpr)
+        t = etree.SubElement(new_run, w + "t")
+        t.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+        t.text = chunk
+        para.insert(index + offset, new_run)
+
+
 def normalize_reference_list(root, footnotes, next_id, rpr_sample):
     """הופך את פריטי רשימת המקורות לפסקאות משמאל לימין.
 
@@ -544,6 +583,8 @@ def normalize_reference_list(root, footnotes, next_id, rpr_sample):
             para.append(ref)
             footnotes.append((next_id, match.group(1).strip()))
             next_id += 1
+        italicize_journal(para, node, local_rpr if local_rpr is not None
+                          else rpr_sample)
     return next_id
 
 
