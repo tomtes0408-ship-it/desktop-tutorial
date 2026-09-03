@@ -185,6 +185,12 @@ TEXT_FIX = {
     # ה-DOI של Güneş et al. הגיע ממסמך הבסיס עם ספרה אחרונה שגויה. בעמוד
     # הראשון של המאמר מודפס 10.1016/j.marpetgeo.2018.01.016.
     "10.1016/j.marpetgeo.2018.01.010": "10.1016/j.marpetgeo.2018.01.016",
+    # לוח טקטוני "שוקע"; "נשקע" בעברית מודרנית הוא "נשקע בכורסה". העבודה
+    # השתמשה בשתי הצורות לאותה פעולה, שש פעמים באחת וארבע בשנייה.
+    "נשקע הלוח האפריקאי": "שוקע הלוח האפריקאי",
+    "הקרום הנשקע": "הקרום השוקע",
+    "הלוח האפריקאי הנשקע": "הלוח האפריקאי השוקע",
+    "החתך הסדימנטרי הנשקע": "החתך הסדימנטרי השוקע",
     # סימני הערת שוליים בתוך רשימת מקורות אינם מקובלים באף סגנון ציטוט.
     # ההסבר על מספור ה-AGU עובר להערה הראשונה של כל אחד משני המקורות
     # (ראו FIRST_MENTION_NOTE), והציון שאיור 2 לקוח מ-Güneş כבר מופיע
@@ -366,6 +372,25 @@ def set_figure_widths(root, widths_cm=FIGURE_WIDTHS_CM):
         for ext in inline.iter(f"{{{A}}}ext"):
             ext.set("cx", str(target))
             ext.set("cy", str(new_cy))
+
+
+# איור 2 הוטמע בעבודת הבסיס ב-669x521 פיקסלים, שהם 135 DPI בגודל ההדפסה -
+# מתחת לסף הסביר. אותו איור קיים בקובץ ה-PDF של Güneş ב-1777x1385, ביחס
+# צדדים זהה, ולכן ההחלפה בטוחה ומעלה את ההדפסה לכ-360 DPI.
+FIGURE2_PNG = os.path.join(HERE, "sources", "gunes_fig21.png")
+FIGURE2_PX = (669, 521)
+
+
+def upgrade_figure2(build_dir):
+    media_dir = os.path.join(build_dir, "word", "media")
+    for name in os.listdir(media_dir):
+        path = os.path.join(media_dir, name)
+        if not name.lower().endswith(".png"):
+            continue
+        if _png_size(path) == FIGURE2_PX:
+            shutil.copy(FIGURE2_PNG, path)
+            return
+    raise SystemExit("לא נמצאה תמונת איור 2 להחלפה")
 
 
 def insert_figure3(root, build_dir):
@@ -629,6 +654,7 @@ def build():
     apply_insertions(root)
     apply_new_subsection(root)
     apply_rewrites(root, POST_INSERT_REWRITES)
+    upgrade_figure2(BUILD)
     insert_figure3(root, BUILD)
     set_figure_widths(root)
     keep_heading_with_list(root)

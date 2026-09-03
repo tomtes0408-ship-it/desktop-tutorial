@@ -82,7 +82,10 @@ QUOTES = {
       "a unique regional kinematics, controlled by frontal convergence "
       "south of Crete (central Mediterranean Ridge) and oblique "
       "subduction with opposite sense of shear for the western (Ionian) "
-      "and eastern (Levantine) domains of the Mediterranean Ridge")
+      "and eastern (Levantine) domains of the Mediterranean Ridge"),
+("huguen", 73,
+      "The two continental margins, African and Aegean, are nearly in "
+      "contact in that area")
 ],
  12: [
 ("royden", 7,
@@ -93,7 +96,10 @@ QUOTES = {
  13: [
 ("royden", 1,
       "a rapidly subducting Ionian oceanic lithosphere in the south (~35 "
-      "mm/yr)")
+      "mm/yr)"),
+("royden", 1,
+      "the junction of a slowly subducting Adriatic continental "
+      "lithosphere in the north (5-10 mm/yr)")
 ],
  14: [
 ("royden", 1,
@@ -228,7 +234,10 @@ QUOTES = {
 ("kopf", 6,
       "The entire prism is thrust onto the Libyan Margin to the south, "
       "and backthrust over the Cretan Margin to the north [Mascle et al., "
-      "1999].")
+      "1999]."),
+("kopf", 6,
+      "In the main collision zone between Lybia and Crete, the entire "
+      "abyssal plain has undergone subduction.")
 ],
  36: [
 ("kopf", 1,
