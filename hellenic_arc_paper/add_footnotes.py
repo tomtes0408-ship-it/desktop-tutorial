@@ -154,15 +154,31 @@ TEXT_FIX = {
         "Mediterranean Sea",
     "מקור: Güneş et al. (2018), Marine and Petroleum Geology.":
         "מקור: Güneş et al. (2018), איור 21, עמ' 315.",
+    # סימני הערת שוליים בתוך רשימת מקורות אינם מקובלים באף סגנון ציטוט.
+    # ההסבר על מספור ה-AGU עובר להערה הראשונה של כל אחד משני המקורות
+    # (ראו FIRST_MENTION_NOTE), והציון שאיור 2 לקוח מ-Güneş כבר מופיע
+    # בכיתוב האיור עצמו ובהערה הצמודה לו.
+    " [מקור איור 2]": "",
+    " [מאמר בפורמט AGU, הממוספר בפסקאות ולא בעמודים; ההפניות בגוף העבודה "
+    "ניתנות בהתאם, לפי תקציר, מספר פסקה או פרק.]": "",
+}
+
+# משפט המצורף להופעה הראשונה של מקור, אחרי ההפניה המלאה והלוקטור.
+FIRST_MENTION_NOTE = {
+    "Kopf": "המאמר בפורמט AGU, הממוספר בפסקאות ולא בעמודים, ולכן ההפניות אליו "
+            "ניתנות לפי תקציר, מספר פסקה או פרק.",
+    "Royden": "גם מאמר זה בפורמט AGU, הממוספר בפסקאות.",
 }
 
 
 def make_footnote_text(entries, used):
     """בונה את טקסט ההערה. הופעה ראשונה של מקור - הפניה מלאה; לאחריה - מקוצרת."""
-    parts = []
+    parts, notes = [], []
     for key, locator in entries:
         first = key not in used
         book = FULL[key] if first else SHORT[key]
+        if first and key in FIRST_MENTION_NOTE:
+            notes.append(FIRST_MENTION_NOTE[key])
         used.add(key)
         if not locator:
             parts.append(book)
@@ -171,7 +187,7 @@ def make_footnote_text(entries, used):
             # מקוצרת הוא ממשיך את המשפט.
             joiner = ". " if first and book[-1].isdigit() else ", "
             parts.append(book + joiner + locator)
-    return "; ".join(parts) + "."
+    return "; ".join(parts) + "." + "".join(" " + n for n in notes)
 
 
 def rpr_for_reference(rpr):
@@ -242,8 +258,7 @@ INSERTIONS = [
         "Kopf, A., Mascle, J., & Klaeschen, D. (2003)",
         "Royden, L. H., & Papanikolaou, D. J. (2011). Slab segmentation and late "
         "Cenozoic disruption of the Hellenic arc. Geochemistry, Geophysics, "
-        "Geosystems, 12(3), Q03010. https://doi.org/10.1029/2010GC003280 "
-        "[מאמר בפורמט AGU, הממוספר בפסקאות ולא בעמודים]"
+        "Geosystems, 12(3), Q03010. https://doi.org/10.1029/2010GC003280"
     ),
 ]
 
