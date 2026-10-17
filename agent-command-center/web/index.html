@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent Command Center</title>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#eaf0ff;background:#091322;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0}header{display:flex;justify-content:space-between;align-items:center;padding:22px 5%;border-bottom:1px solid #243654;background:#0c1930}
+h1{font-size:23px;margin:0}h2{font-size:18px;margin:0 0 15px}.sub{color:#94a8c7;font-size:13px}
+main{max-width:1350px;margin:auto;padding:28px 24px;display:grid;gap:22px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.panel{background:#101f36;border:1px solid #273b5c;border-radius:18px;padding:20px}
+.agent{min-height:145px}.agent b{font-size:18px}.agent p{color:#a9bad4;font-size:14px;line-height:1.7}
+.dot{display:inline-block;width:9px;height:9px;background:#4ade9e;border-radius:50%;margin-left:9px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+input,textarea,select{width:100%;background:#09182c;color:#fff;border:1px solid #345071;border-radius:10px;padding:12px;font:inherit;margin:7px 0 14px}
+textarea{min-height:105px;resize:vertical}label{font-size:14px;color:#bbcae0}
+button{background:#657cf5;border:0;color:#fff;padding:11px 17px;border-radius:10px;cursor:pointer;font:inherit;font-weight:650}
+button.secondary{background:#243854}button.warn{background:#a94554}
+button:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.item{border-top:1px solid #293a55;padding:14px 0}.item:first-of-type{border-top:0}
+.status{display:inline-block;padding:3px 8px;border-radius:6px;background:#2d4260;color:#d9e6fc;font-size:12px}
+.status.completed{background:#155843;color:#c4f7e2}.status.failed{background:#69303c;color:#ffd8de}
+.result{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;font-size:14px;margin-top:10px;color:#dce7f6}
+.small{font-size:12px;color:#93a7c4}#notice{min-height:22px;color:#e9ce8a}
+@media(max-width:850px){.grid,.two{grid-template-columns:1fr}main{padding:16px}header{padding:18px}}
+</style></head>
+<body>
+<header><div><h1>◈ Agent Command Center</h1><div class="sub">מערכת שליטה בסוכנים אוטונומיים</div></div>
+<div class="actions"><span id="mode" class="small">טוען...</span><button id="pause" class="warn">עצור פעילות</button></div></header>
+<main>
+<section class="grid">
+<div class="panel agent"><b><span class="dot"></span>סוכן כללי</b><p>ניהול בקשות, תכנון משימות ותוצרים אישיים. ללא הרשאות לשינוי מערכות חיצוניות.</p><span class="small">General</span></div>
+<div class="panel agent"><b><span class="dot"></span>סוכן מחקר</b><p>חקירת נושאים עם חיפוש מקורות, ניתוח ביקורתי, הצגת ראיות והסתייגויות.</p><span class="small">Research</span></div>
+<div class="panel agent"><b><span class="dot"></span>סוכן יוזם</b><p>מעקב אחר מטרה מתמשכת ויצירת המלצות יזומות לפי לוח זמנים מוגדר.</p><span class="small">Proactive</span></div>
+</section>
+<section class="two">
+<div class="panel"><h2>משימה חדשה</h2><form id="taskForm"><label for="role">סוכן אחראי</label><select id="role"><option value="general">כללי</option><option value="research">מחקר</option><option value="proactive">יוזם</option></select>
+<label for="goal">מטרת המשימה</label><textarea id="goal" required minlength="3" maxlength="4000" placeholder="לדוגמה: חקור את הטכנולוגיות המובילות לאגירת אנרגיה במדבר"></textarea>
+<button type="submit">הפעל משימה</button></form><p class="small">משימות דורשות מפתח API בשרת. אין תוצאות מדומות.</p></div>
+<div class="panel"><h2>אוטונומיה יזומה</h2><form id="proactiveForm"><label for="longGoal">מטרה מתמשכת</label><textarea id="longGoal" maxlength="4000" placeholder="יעד שהסוכן יבחן מחדש באופן תקופתי"></textarea>
+<label for="interval">מרווח בדיקה</label><select id="interval"><option value="60">כל שעה</option><option value="360">כל שש שעות</option><option value="1440" selected>פעם ביום</option><option value="10080">פעם בשבוע</option></select>
+<label><input id="enabled" type="checkbox" style="width:auto;margin-left:8px">אפשר יוזמות אוטומטיות</label><div style="margin-top:16px"><button type="submit">שמור הגדרות</button></div></form>
+<p class="small">מקסימום 20 משימות ביום כברירת מחדל. פעולה זו יוצרת משימות ניתוח בלבד.</p></div>
+</section>
+<section class="two"><div class="panel"><h2>תור משימות</h2><div id="tasks">אין משימות עדיין</div></div><div class="panel"><h2>זיכרון משותף</h2><div id="memory">אין מידע שמור עדיין</div></div></section>
+<div id="notice" role="status" aria-live="polite"></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let lastConfig="";
+function escapeHTML(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+async function api(path,options){const r=await fetch(path,{headers:{"Content-Type":"application/json"},...options});const data=await r.json();if(!r.ok)throw Error(data.error||"Request failed");return data;}
+function notify(s){$("notice").textContent=s;}
+async function refresh(){
+ try{
+ const s=await api("/api/state");
+ $("mode").textContent=s.configured?"מודל AI מחובר":"חסר מפתח API";
+ $("pause").textContent=s.paused?"חדש פעילות":"עצור פעילות";
+ $("pause").className=s.paused?"secondary":"warn";
+ const config=JSON.stringify(s.proactive);
+ if(lastConfig!==config){
+   $("longGoal").value=s.proactive.goal;$("interval").value=String(s.proactive.interval_minutes);
+   $("enabled").checked=s.proactive.enabled;lastConfig=config;
+ }
+ $("tasks").innerHTML=s.tasks.length?s.tasks.map(t=>`<div class="item"><span class="status ${escapeHTML(t.status)}">${escapeHTML(t.status)}</span> <b>${escapeHTML(t.role)}</b><div>${escapeHTML(t.goal)}</div><div class="small">${escapeHTML(t.created_at)} · ${escapeHTML(t.id.slice(0,8))}</div>${t.result?`<details><summary>הצג תוצאה</summary><div class="result">${escapeHTML(t.result)}</div></details>`:""}${t.error?`<div class="result" style="color:#ffb9c2">${escapeHTML(t.error)}</div>`:""}</div>`).join(""):"אין משימות עדיין";
+ $("memory").innerHTML=s.memory.length?s.memory.map(m=>`<div class="item"><b>${escapeHTML(m.role)}</b><div class="small">${escapeHTML(m.created_at)}</div><details><summary>הצג זיכרון</summary><div class="result">${escapeHTML(m.content)}</div></details></div>`).join(""):"אין מידע שמור עדיין";
+ }catch(e){notify("שגיאת תקשורת: "+e.message);}
+}
+$("taskForm").addEventListener("submit",async e=>{e.preventDefault();try{await api("/api/tasks",{method:"POST",body:JSON.stringify({role:$("role").value,goal:$("goal").value})});$("goal").value="";notify("המשימה נרשמה");await refresh()}catch(err){notify(err.message)}});
+$("proactiveForm").addEventListener("submit",async e=>{e.preventDefault();try{await api("/api/proactive",{method:"POST",body:JSON.stringify({goal:$("longGoal").value,enabled:$("enabled").checked,interval_minutes:Number($("interval").value)})});notify("ההגדרות נשמרו");await refresh()}catch(err){notify(err.message)}});
+$("pause").addEventListener("click",async()=>{try{await api("/api/control",{method:"POST",body:JSON.stringify({paused:$("pause").textContent==="עצור פעילות"})});await refresh()}catch(err){notify(err.message)}});
+refresh();setInterval(refresh,4000);
+</script></body></html>
