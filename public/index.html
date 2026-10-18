@@ -1,0 +1,39 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#091426"><title>Agent Command Center</title><style>
+:root{font-family:system-ui,Arial,sans-serif;background:#081321;color:#eef3ff;color-scheme:dark}*{box-sizing:border-box}
+body{margin:0}header{border-bottom:1px solid #243651;padding:20px 6%;background:#0c1b31}
+h1{margin:0;font-size:23px}h2{font-size:19px;margin:0 0 14px}.sub{color:#a5b6ce;font-size:13px;margin-top:6px}main{max-width:1100px;margin:auto;padding:25px;display:grid;gap:22px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.panel{background:#11243d;border:1px solid #2d4866;border-radius:18px;padding:20px}
+.agent{min-height:120px}.agent strong{font-size:18px}.agent p{color:#b3c4d9;font-size:14px;line-height:1.5}.dot{display:inline-block;width:8px;height:8px;background:#55ddb2;border-radius:50%;margin-left:7px}
+select,textarea{width:100%;font:inherit;border-radius:11px;background:#0a172b;color:#f7f8ff;border:1px solid #375172;padding:11px;margin:8px 0 14px}
+textarea{min-height:120px}label{font-size:14px;color:#c4d3e6}button{background:#657ef3;color:white;border:0;border-radius:10px;padding:12px 22px;font:inherit;font-weight:650;cursor:pointer}
+button:disabled{opacity:.55}.muted{color:#9cacc5;font-size:13px}.result{white-space:pre-wrap;line-height:1.75;overflow-wrap:anywhere}
+.item{padding:12px 0;border-top:1px solid #31425e}.item:first-child{border-top:0}
+.badge{background:#254566;padding:4px 9px;border-radius:10px;font-size:12px}
+@media(max-width:730px){.grid{grid-template-columns:1fr}main{padding:15px}header{padding:17px}}
+</style></head><body><header><h1>◈ Agent Command Center</h1><div class="sub">שליטה בסוכנים מהאייפון · גרסת ניסוי בענן</div></header>
+<main><section class="grid">
+<div class="panel agent"><strong><span class="dot"></span>סוכן כללי</strong><p>עזרה בתכנון, חשיבה וניהול משימות.</p></div>
+<div class="panel agent"><strong><span class="dot"></span>סוכן מחקר</strong><p>מחקר, חיפוש מקורות וניתוח ביקורתי.</p></div>
+<div class="panel agent"><strong><span class="dot"></span>סוכן יוזם</strong><p>יוזמות, המלצות וסדרי עדיפויות לפי מטרה.</p></div></section>
+<section class="panel"><h2>משימה חדשה</h2><form id="form">
+<label for="role">בחר סוכן</label><select id="role"><option value="general">כללי</option><option value="research">מחקר</option><option value="proactive">יוזם</option></select>
+<label for="goal">מה תרצה לבצע?</label><textarea id="goal" required minlength="3" maxlength="4000" placeholder="למשל, חקור חידושים באגירת אנרגיה והצע כיווני פיתוח"></textarea>
+<button id="send" type="submit">הפעל סוכן</button><span id="status" class="muted" role="status" style="margin-right:12px"></span></form>
+<p class="muted">גרסת הניסוי מבצעת משימה אחת בכל פעם. פעילות יזומה מתמשכת וזיכרון בענן עדיין אינם מופעלים.</p></section>
+<section class="panel"><h2>תוצאות</h2><div id="results" class="result">כאן יוצגו התוצאות לאחר הפעלת משימה.</div></section>
+<section class="panel"><h2>היסטוריה במכשיר הזה</h2><div id="history" class="muted"></div><p class="muted">ההיסטוריה נשמרת בדפדפן הנוכחי בלבד. היא אינה זיכרון משותף בין מכשירים.</p></section></main>
+<script>
+const byId=x=>document.getElementById(x);
+const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function history(){let data=[];try{data=JSON.parse(localStorage.getItem("agent_history")||"[]")}catch{}
+byId("history").innerHTML=data.length?data.map(x=>'<div class="item"><b>'+esc(x.role)+'</b> · '+esc(x.time)+'<details><summary>'+esc(x.goal)+'</summary><div class="result">'+esc(x.answer)+'</div></details></div>').join(""):"אין משימות קודמות";return data;}
+byId("form").addEventListener("submit",async e=>{
+e.preventDefault();const b=byId("send");b.disabled=true;byId("status").textContent="הסוכן עובד...";byId("results").textContent="";
+const role=byId("role").value,goal=byId("goal").value;
+try{const r=await fetch("/api/task",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({role,goal})});
+const data=await r.json();if(!r.ok){const hint=data.providerStatus?` (OpenAI HTTP ${data.providerStatus}${data.providerCode?`: ${data.providerCode}`:""})`:"";throw Error((data.error||"שגיאה בהפעלת הסוכן")+hint);}
+byId("results").textContent=data.result;const entries=history();entries.unshift({role,goal,answer:data.result,time:new Date().toLocaleString("he-IL")});try{localStorage.setItem("agent_history",JSON.stringify(entries.slice(0,12)))}catch{}history();
+byId("status").textContent="המשימה הושלמה";
+}catch(err){byId("results").textContent="לא ניתן לבצע את המשימה: "+err.message;byId("status").textContent="נכשל";}finally{b.disabled=false;}
+});history();
+</script></body></html>

@@ -1,0 +1,22 @@
+name: Agent Command Center tests
+on:
+  push:
+    branches:
+      - feature/agent-command-center
+  pull_request:
+    paths:
+      - 'agent-command-center/**'
+      - '.github/workflows/agent-command-center.yml'
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests
+        working-directory: agent-command-center
+        run: python -m unittest discover -s tests -v
+      - name: Syntax validation
+        run: python -m py_compile agent-command-center/app.py agent-command-center/tests/test_app.py
