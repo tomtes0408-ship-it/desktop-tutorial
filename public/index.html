@@ -31,7 +31,7 @@ byId("form").addEventListener("submit",async e=>{
 e.preventDefault();const b=byId("send");b.disabled=true;byId("status").textContent="הסוכן עובד...";byId("results").textContent="";
 const role=byId("role").value,goal=byId("goal").value;
 try{const r=await fetch("/api/task",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({role,goal})});
-const data=await r.json();if(!r.ok)throw Error(data.error||"שגיאה בהפעלת הסוכן");
+const data=await r.json();if(!r.ok){const hint=data.providerStatus?` (OpenAI HTTP ${data.providerStatus}${data.providerCode?`: ${data.providerCode}`:""})`:"";throw Error((data.error||"שגיאה בהפעלת הסוכן")+hint);}
 byId("results").textContent=data.result;const entries=history();entries.unshift({role,goal,answer:data.result,time:new Date().toLocaleString("he-IL")});try{localStorage.setItem("agent_history",JSON.stringify(entries.slice(0,12)))}catch{}history();
 byId("status").textContent="המשימה הושלמה";
 }catch(err){byId("results").textContent="לא ניתן לבצע את המשימה: "+err.message;byId("status").textContent="נכשל";}finally{b.disabled=false;}
