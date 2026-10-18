@@ -101,7 +101,7 @@ def complete(task_id, status, result="", error="", input_tokens=0, output_tokens
 
 
 def model_request(role, goal, context):
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = (os.environ.get("OPENAI_API_KEY") or os.environ.get("opaenai_api_key"))
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY missing: task was not executed")
     payload = {
@@ -214,7 +214,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, {
                 "tasks": query("SELECT * FROM tasks ORDER BY created_at DESC LIMIT 100"),
                 "memory": query("SELECT * FROM memory ORDER BY id DESC LIMIT 20"),
-                "paused": paused, "configured": bool(os.environ.get("OPENAI_API_KEY")),
+                "paused": paused, "configured": bool((os.environ.get("OPENAI_API_KEY") or os.environ.get("opaenai_api_key"))),
                 "proactive": {"enabled": setting("proactive_enabled", "false") == "true",
                               "goal": setting("proactive_goal", ""),
                               "interval_minutes": int(setting("proactive_interval_minutes", "1440"))},
@@ -259,7 +259,7 @@ def main():
     init_db()
     threading.Thread(target=scheduler, daemon=True).start()
     print(f"Agent Command Center http://{HOST}:{PORT}")
-    if not os.environ.get("OPENAI_API_KEY"):
+    if not (os.environ.get("OPENAI_API_KEY") or os.environ.get("opaenai_api_key")):
         print("No OPENAI_API_KEY: tasks will fail visibly; no simulated results.")
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
 
