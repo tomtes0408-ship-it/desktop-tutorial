@@ -34,7 +34,7 @@ export default async function handler(req,res){
     try{api=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify(payload),signal:abort.signal});}
     finally{clearTimeout(timeout);}
     const body=await api.json();
-    if(!api.ok)return json(res,502,{error:"Model request failed",providerStatus:api.status});
+    if(!api.ok){const providerCode=typeof body?.error?.code==="string"?body.error.code.slice(0,80):null;return json(res,502,{error:"Model request failed",providerStatus:api.status,providerCode});}
     const text=(body.output||[]).flatMap(x=>(x.content||[]).filter(c=>c.type==="output_text").map(c=>c.text||"")).join("\n");
     if(!text)return json(res,502,{error:"Model returned no text"});
     return json(res,200,{role,result:text,usage:{input_tokens:body.usage?.input_tokens||0,output_tokens:body.usage?.output_tokens||0},timestamp:new Date().toISOString()});
