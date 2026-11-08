@@ -232,10 +232,38 @@ def to_srt(segments: list[dict]) -> str:
                      for i, s in enumerate(segments, 1))
 
 
-def main():
-    port = int(os.environ.get("PORT", "5050"))
-    print(f"🎙️  המקליט החכם פועל: http://localhost:{port}")
-    app.run(host=os.environ.get("HOST", "127.0.0.1"), port=port, threaded=True)
+def lan_ip() -> str | None:
+    """כתובת ה-IP של המחשב ברשת המקומית (לא נשלחת שום חבילה)."""
+    import socket
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("10.255.255.255", 1))
+            return s.getsockname()[0]
+    except OSError:
+        return None
+
+
+def main(argv=None):
+    import argparse
+
+    p = argparse.ArgumentParser(description="המקליט החכם - שרת")
+    p.add_argument("--lan", action="store_true",
+                   help="גישה גם מהטלפון: מאזין ברשת המקומית ב-HTTPS (נדרש להקלטה בדפדפן הטלפון)")
+    p.add_argument("--port", type=int, default=int(os.environ.get("PORT", "5050")))
+    args = p.parse_args(argv)
+
+    if args.lan:
+        ip = lan_ip() or "<כתובת-המחשב>"
+        print("🎙️  המקליט החכם פועל:")
+        print(f"   💻 במחשב:  https://localhost:{args.port}")
+        print(f"   📱 בטלפון: https://{ip}:{args.port}   (באותה רשת Wi-Fi)")
+        print("   ⚠️  הדפדפן יציג אזהרת אבטחה (תעודה מקומית) - בחרו 'מתקדם' ← 'המשך לאתר'.")
+        # תעודה זמנית בחתימה עצמית: דפדפני טלפון מאפשרים גישה למיקרופון רק ב-HTTPS
+        app.run(host="0.0.0.0", port=args.port, threaded=True, ssl_context="adhoc")
+    else:
+        print(f"🎙️  המקליט החכם פועל: http://localhost:{args.port}")
+        print("   📱 לגישה מהטלפון הפעילו עם --lan")
+        app.run(host=os.environ.get("HOST", "127.0.0.1"), port=args.port, threaded=True)
 
 
 if __name__ == "__main__":

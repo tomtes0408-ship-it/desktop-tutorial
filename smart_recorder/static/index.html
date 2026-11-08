@@ -210,7 +210,14 @@ fetch("/api/status").then(r => r.json()).then(s => {
 /* ---------- הקלטה ---------- */
 let recorder, chunks = [], stream, startedAt = 0, elapsedBefore = 0, tick, audioCtx, analyser, raf, discard = false;
 
+const canRecord = window.isSecureContext && navigator.mediaDevices?.getUserMedia && window.MediaRecorder;
+if (!canRecord) {
+  $("#recBtn").disabled = true; $("#recBtn").style.opacity = .4;
+  $("#recHint").innerHTML = "הקלטה מהדפדפן כאן דורשת HTTPS – הפעילו את השרת עם <b>--lan</b>. בינתיים אפשר להעלות קובץ (בטלפון: גם להקליט דרכו) ⬇";
+}
+
 $("#recBtn").onclick = async () => {
+  if (!canRecord) return;
   if (recorder && recorder.state !== "inactive") { recorder.stop(); return; }
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
@@ -251,7 +258,7 @@ function onRecordingStop() {
   upload(new File(chunks, `recording.${ext}`, { type }), name);
 }
 function startMeter() {
-  audioCtx = new AudioContext(); analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024;
+  audioCtx = new AudioContext(); audioCtx.resume(); analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024;
   audioCtx.createMediaStreamSource(stream).connect(analyser);
   const cv = $("#wave"), ctx = cv.getContext("2d"), data = new Uint8Array(analyser.fftSize);
   const color = getComputedStyle(document.documentElement).getPropertyValue("--rec");
