@@ -1,0 +1,5 @@
+# המקליט החכם - תלויות
+faster-whisper>=1.2.1   # תמלול מקומי מדויק (Whisper large-v3)
+anthropic>=2.6.0        # סיכום חכם ונקודות מפתח (Claude)
+Flask>=2.3.0            # ממשק דפדפן
+# נדרש גם ffmpeg במערכת (apt install ffmpeg / brew install ffmpeg / winget install ffmpeg)

@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>המקליט החכם</title>
+<style>
+  :root {
+    --bg: #f6f7fb; --panel: #ffffff; --text: #1d2130; --muted: #6b7286; --line: #e3e6ef;
+    --accent: #4f46e5; --accent-soft: #eef0ff; --rec: #e11d48; --ok: #059669; --warn: #d97706;
+    --radius: 14px; --shadow: 0 1px 2px rgba(16,24,40,.06), 0 4px 16px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1117; --panel: #181b24; --text: #e8eaf2; --muted: #9aa1b5; --line: #2a2f3d;
+      --accent: #818cf8; --accent-soft: #23264a; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.6 system-ui, "Segoe UI", "Rubik", "Assistant", Arial, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 20px; margin: 0; }
+  header .badges { margin-inline-start: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 12px; padding: 3px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+  .badge.bad { background: #fde8ec; color: var(--rec); }
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: auto; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; padding: 16px; } aside { order: 2; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+  aside h2, .card h2 { font-size: 15px; margin: 0 0 12px; }
+  .history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .history li { padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+  .history li:hover, .history li.active { background: var(--accent-soft); }
+  .history .t { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history .m { font-size: 12px; color: var(--muted); }
+  main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+  .recorder { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; }
+  @media (max-width: 600px) { .recorder { grid-template-columns: 1fr; justify-items: center; } }
+  .rec-btn { width: 96px; height: 96px; border-radius: 50%; border: 0; cursor: pointer; background: var(--rec); color: #fff;
+             font-size: 34px; box-shadow: 0 6px 20px rgba(225,29,72,.35); transition: transform .15s; }
+  .rec-btn:hover { transform: scale(1.05); }
+  .rec-btn.recording { animation: pulse 1.4s infinite; border-radius: 28px; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(225,29,72,.5); } 50% { box-shadow: 0 0 0 16px rgba(225,29,72,0); } }
+  .timer { font-size: 32px; font-variant-numeric: tabular-nums; font-weight: 600; direction: ltr; text-align: start; }
+  canvas#wave { width: 100%; height: 56px; display: block; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button.btn { border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 8px 14px; border-radius: 10px; cursor: pointer; font: inherit; }
+  button.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.btn:disabled { opacity: .45; cursor: not-allowed; }
+  .drop { border: 2px dashed var(--line); border-radius: var(--radius); padding: 18px; text-align: center; color: var(--muted); cursor: pointer; margin-top: 16px; }
+  .drop.over { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 16px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  select, input[type=text], input[type=search] { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+
+  .progress { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 10px 0 4px; }
+  .progress > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+  .progress.indet > div { width: 30%; animation: slide 1.2s infinite linear; }
+  @keyframes slide { from { transform: translateX(-120%); } to { transform: translateX(380%); } }
+  .muted { color: var(--muted); font-size: 13px; }
+  .err { color: var(--rec); }
+
+  .result-head { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .result-head h2 { font-size: 22px; margin: 0; flex: 1; min-width: 200px; }
+  audio { width: 100%; margin: 14px 0 4px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 14px 0 16px; overflow-x: auto; }
+  .tabs button { border: 0; background: none; color: var(--muted); padding: 10px 14px; cursor: pointer; font: inherit; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .tabs button.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .exec { background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; font-size: 16px; }
+  .kp { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .kp li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 8px; flex: none; }
+  .dot.high { background: var(--rec); } .dot.medium { background: var(--warn); } .dot.low { background: var(--ok); }
+  .ts { direction: ltr; font-family: ui-monospace, monospace; font-size: 12px; color: var(--accent); background: var(--accent-soft);
+        border: 0; border-radius: 6px; padding: 2px 7px; cursor: pointer; flex: none; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 12px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .seg { display: flex; gap: 10px; padding: 6px 8px; border-radius: 8px; }
+  .seg.now { background: var(--accent-soft); }
+  .seg mark { background: #fde68a; color: inherit; }
+  .transcript { max-height: 60vh; overflow-y: auto; }
+  table.ai { width: 100%; border-collapse: collapse; }
+  table.ai td, table.ai th { text-align: start; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .hidden { display: none !important; }
+  h3 { font-size: 15px; margin: 20px 0 8px; }
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:26px">🎙️</span>
+  <h1>המקליט החכם</h1>
+  <div class="badges" id="badges"></div>
+</header>
+
+<div class="layout">
+  <aside class="card">
+    <div class="row" style="justify-content:space-between"><h2>הקלטות קודמות</h2>
+      <button class="btn" id="newBtn" title="הקלטה חדשה">＋ חדש</button></div>
+    <ul class="history" id="history"><li class="muted">אין עדיין הקלטות</li></ul>
+  </aside>
+
+  <main>
+    <!-- הקלטה / העלאה -->
+    <section class="card" id="captureCard">
+      <div class="recorder">
+        <button class="rec-btn" id="recBtn" aria-label="התחל הקלטה">●</button>
+        <div>
+          <div class="timer" id="timer">00:00</div>
+          <canvas id="wave" height="56"></canvas>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" id="pauseBtn" disabled>⏸ השהה</button>
+            <button class="btn" id="discardBtn" disabled>🗑 בטל</button>
+            <span class="muted" id="recHint">לחצו על הכפתור האדום כדי להתחיל להקליט</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="drop" id="drop">📁 או גררו לכאן קובץ אודיו / וידאו (mp3, wav, m4a, webm, mp4...) או לחצו לבחירה
+        <input type="file" id="fileInput" accept="audio/*,video/*" hidden>
+      </div>
+
+      <div class="options">
+        <label class="f">שם ההקלטה<input type="text" id="optName" placeholder="למשל: ישיבת צוות"></label>
+        <label class="f">שפת ההקלטה
+          <select id="optLang">
+            <option value="">זיהוי אוטומטי</option><option value="he" selected>עברית</option>
+            <option value="en">English</option><option value="ar">العربية</option><option value="ru">Русский</option>
+            <option value="fr">Français</option><option value="es">Español</option>
+          </select></label>
+        <label class="f">שפת הסיכום
+          <select id="optSumLang">
+            <option value="he" selected>עברית</option><option value="en">English</option>
+            <option value="ar">العربية</option><option value="ru">Русский</option>
+          </select></label>
+        <label class="f">הקשר (אופציונלי – משפר דיוק)<input type="text" id="optContext" placeholder="למשל: הרצאה בכלכלה, דוברים: דנה ויוסי"></label>
+      </div>
+    </section>
+
+    <!-- התקדמות -->
+    <section class="card hidden" id="progressCard">
+      <h2 id="progTitle">מעבד...</h2>
+      <div class="progress" id="progBar"><div></div></div>
+      <div class="muted" id="progLabel"></div>
+    </section>
+
+    <!-- תוצאות -->
+    <section class="card hidden" id="resultCard">
+      <div class="result-head">
+        <h2 id="rTitle"></h2>
+        <div class="row">
+          <button class="btn" data-export="md">⬇ Markdown</button>
+          <button class="btn" data-export="txt">⬇ TXT</button>
+          <button class="btn" data-export="srt">⬇ כתוביות SRT</button>
+          <button class="btn" id="copyBtn">📋 העתק סיכום</button>
+          <button class="btn" id="delBtn">🗑</button>
+        </div>
+      </div>
+      <div class="muted" id="rMeta"></div>
+      <audio id="player" controls preload="metadata"></audio>
+
+      <div class="tabs" id="tabs">
+        <button data-tab="summary" class="active">📝 סיכום</button>
+        <button data-tab="points">⭐ נקודות מפתח</button>
+        <button data-tab="actions">✅ משימות והחלטות</button>
+        <button data-tab="transcript">📄 תמליל מלא</button>
+      </div>
+
+      <div data-pane="summary">
+        <div id="sumError" class="err hidden"></div>
+        <div class="exec" id="rExec"></div>
+        <div id="rDetailed"></div>
+        <h3>נושאים</h3><div class="tags" id="rTopics"></div>
+        <p class="muted" id="rSentiment"></p>
+        <div class="row" style="margin-top:12px"><button class="btn" id="resumBtn">🔄 סכם מחדש</button></div>
+      </div>
+      <div data-pane="points" class="hidden"><ul class="kp" id="rPoints"></ul></div>
+      <div data-pane="actions" class="hidden">
+        <h3 style="margin-top:0">משימות לביצוע</h3><div id="rActions"></div>
+        <h3>החלטות</h3><ul id="rDecisions"></ul>
+        <h3>שאלות פתוחות</h3><ul id="rQuestions"></ul>
+      </div>
+      <div data-pane="transcript" class="hidden">
+        <input type="search" id="tSearch" placeholder="🔍 חיפוש בתמליל..." style="width:100%;margin-bottom:10px">
+        <div class="transcript" id="rTranscript"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = sec => { sec = Math.floor(sec); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60;
+  const p = n => String(n).padStart(2, "0"); return h ? `${h}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`; };
+const parseTs = t => (t || "").split(":").map(Number).reduce((a, n) => a * 60 + (n || 0), 0);
+
+let current = null, pollTimer = null;
+
+/* ---------- סטטוס מערכת ---------- */
+fetch("/api/status").then(r => r.json()).then(s => {
+  $("#badges").innerHTML =
+    `<span class="badge">תמלול: Whisper ${esc(s.whisper_model)}</span>` +
+    `<span class="badge ${s.claude_configured ? "" : "bad"}">סיכום: ${s.claude_configured ? "Claude" : "חסר ANTHROPIC_API_KEY"}</span>` +
+    (s.ffmpeg ? "" : `<span class="badge bad">ffmpeg לא מותקן</span>`);
+});
+
+/* ---------- הקלטה ---------- */
+let recorder, chunks = [], stream, startedAt = 0, elapsedBefore = 0, tick, audioCtx, analyser, raf, discard = false;
+
+$("#recBtn").onclick = async () => {
+  if (recorder && recorder.state !== "inactive") { recorder.stop(); return; }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+  } catch (e) { alert("אין גישה למיקרופון: " + e.message); return; }
+  const mime = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"].find(m => MediaRecorder.isTypeSupported(m)) || "";
+  recorder = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 128000 } : undefined);
+  chunks = []; discard = false; elapsedBefore = 0; startedAt = Date.now();
+  recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+  recorder.onstop = onRecordingStop;
+  recorder.start(1000);
+  setRecUI(true); startMeter(); tick = setInterval(updateTimer, 250);
+};
+
+$("#pauseBtn").onclick = () => {
+  if (recorder.state === "recording") { recorder.pause(); elapsedBefore += Date.now() - startedAt; $("#pauseBtn").textContent = "▶ המשך"; $("#recHint").textContent = "מושהה"; }
+  else if (recorder.state === "paused") { recorder.resume(); startedAt = Date.now(); $("#pauseBtn").textContent = "⏸ השהה"; $("#recHint").textContent = "מקליט..."; }
+};
+$("#discardBtn").onclick = () => { discard = true; recorder.stop(); };
+
+function updateTimer() {
+  const ms = elapsedBefore + (recorder.state === "recording" ? Date.now() - startedAt : 0);
+  $("#timer").textContent = fmt(ms / 1000);
+}
+function setRecUI(on) {
+  $("#recBtn").classList.toggle("recording", on);
+  $("#recBtn").textContent = on ? "■" : "●";
+  $("#pauseBtn").disabled = $("#discardBtn").disabled = !on;
+  $("#pauseBtn").textContent = "⏸ השהה";
+  $("#recHint").textContent = on ? "מקליט... לחצו ■ לסיום ועיבוד" : "לחצו על הכפתור האדום כדי להתחיל להקליט";
+}
+function onRecordingStop() {
+  clearInterval(tick); cancelAnimationFrame(raf); stream.getTracks().forEach(t => t.stop()); audioCtx && audioCtx.close();
+  setRecUI(false); clearCanvas(); $("#timer").textContent = "00:00";
+  if (discard) return;
+  const type = recorder.mimeType || "audio/webm";
+  const ext = type.includes("ogg") ? "ogg" : type.includes("mp4") ? "m4a" : "webm";
+  const name = $("#optName").value.trim() || "הקלטה " + new Date().toLocaleString("he-IL");
+  upload(new File(chunks, `recording.${ext}`, { type }), name);
+}
+function startMeter() {
+  audioCtx = new AudioContext(); analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024;
+  audioCtx.createMediaStreamSource(stream).connect(analyser);
+  const cv = $("#wave"), ctx = cv.getContext("2d"), data = new Uint8Array(analyser.fftSize);
+  const color = getComputedStyle(document.documentElement).getPropertyValue("--rec");
+  const draw = () => {
+    cv.width = cv.clientWidth * devicePixelRatio; cv.height = 56 * devicePixelRatio;
+    analyser.getByteTimeDomainData(data);
+    ctx.clearRect(0, 0, cv.width, cv.height); ctx.lineWidth = 2 * devicePixelRatio; ctx.strokeStyle = color; ctx.beginPath();
+    for (let i = 0; i < data.length; i++) { const x = i / data.length * cv.width, y = data[i] / 255 * cv.height; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke(); raf = requestAnimationFrame(draw);
+  };
+  draw();
+}
+function clearCanvas() { const cv = $("#wave"); cv.getContext("2d").clearRect(0, 0, cv.width, cv.height); }
+
+/* ---------- העלאת קובץ ---------- */
+const drop = $("#drop");
+drop.onclick = () => $("#fileInput").click();
+$("#fileInput").onchange = e => e.target.files[0] && upload(e.target.files[0]);
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => e.dataTransfer.files[0] && upload(e.dataTransfer.files[0]));
+
+async function upload(file, name) {
+  const fd = new FormData();
+  fd.append("audio", file);
+  fd.append("name", name || $("#optName").value.trim() || file.name.replace(/\.[^.]+$/, ""));
+  fd.append("language", $("#optLang").value);
+  fd.append("summary_language", $("#optSumLang").value);
+  fd.append("context", $("#optContext").value);
+  showProgress("מעלה את הקובץ...", null);
+  $("#resultCard").classList.add("hidden");
+  try {
+    const r = await fetch("/api/jobs", { method: "POST", body: fd });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || r.statusText);
+    $("#optName").value = "";
+    openJob(j.id); loadHistory();
+  } catch (e) { showProgress("שגיאה בהעלאה", 0, e.message, true); }
+}
+
+/* ---------- מעקב והצגה ---------- */
+function showProgress(title, pct, label = "", isErr = false) {
+  $("#progressCard").classList.remove("hidden");
+  $("#progTitle").textContent = title;
+  $("#progBar").classList.toggle("indet", pct == null);
+  $("#progBar > div").style.width = (pct ?? 0) + "%";
+  $("#progLabel").textContent = label; $("#progLabel").classList.toggle("err", isErr);
+}
+
+async function openJob(id) {
+  clearTimeout(pollTimer);
+  const r = await fetch(`/api/jobs/${id}`);
+  if (!r.ok) return;
+  const job = await r.json();
+  current = job;
+  $$("#history li").forEach(li => li.classList.toggle("active", li.dataset.id === id));
+  if (job.status === "error") { showProgress("העיבוד נכשל", 0, job.error, true); return; }
+  if (job.status !== "done") {
+    const pct = job.stage === "transcribing" ? job.progress : null;
+    showProgress(job.name, pct, job.stage_label);
+    pollTimer = setTimeout(() => openJob(id), 1000);
+    return;
+  }
+  $("#progressCard").classList.add("hidden");
+  renderResult(job); loadHistory();
+}
+
+function renderResult(job) {
+  const t = job.transcript || {}, s = job.summary || {};
+  $("#resultCard").classList.remove("hidden");
+  $("#rTitle").textContent = s.title || job.name;
+  $("#rMeta").textContent = `${job.created_at} · משך ${fmt(t.duration || 0)} · שפה: ${t.language || "?"}` +
+    (job.transcribe_seconds ? ` · זמן תמלול ${job.transcribe_seconds} שנ'` : "");
+  const player = $("#player");
+  if (player.dataset.id !== job.id) { player.src = `/api/jobs/${job.id}/audio`; player.dataset.id = job.id; }
+
+  $("#sumError").classList.toggle("hidden", !job.summary_error);
+  $("#sumError").textContent = job.summary_error ? "⚠️ הסיכום נכשל: " + job.summary_error : "";
+  $("#rExec").textContent = s.executive_summary || (job.summary_error ? "" : "—");
+  $("#rExec").classList.toggle("hidden", !s.executive_summary);
+  $("#rDetailed").innerHTML = (s.detailed_summary || []).map(p => `<p>${esc(p)}</p>`).join("");
+  $("#rTopics").innerHTML = (s.topics || []).map(x => `<span class="tag">${esc(x)}</span>`).join("") || '<span class="muted">—</span>';
+  $("#rSentiment").textContent = s.sentiment ? "טון כללי: " + s.sentiment : "";
+
+  $("#rPoints").innerHTML = (s.key_points || []).map(k => `<li><span class="dot ${esc(k.importance)}"></span>
+      <span style="flex:1">${esc(k.point)}</span>${k.timestamp ? `<button class="ts" data-t="${esc(k.timestamp)}">${esc(k.timestamp)}</button>` : ""}</li>`).join("")
+    || '<li class="muted">אין נקודות מפתח</li>';
+
+  const ai = s.action_items || [];
+  $("#rActions").innerHTML = ai.length ? `<table class="ai"><tr><th>משימה</th><th>אחראי</th><th>מועד</th></tr>` +
+    ai.map(a => `<tr><td>☐ ${esc(a.task)}</td><td>${esc(a.owner) || "—"}</td><td>${esc(a.due) || "—"}</td></tr>`).join("") + `</table>`
+    : '<p class="muted">לא זוהו משימות</p>';
+  const li = arr => (arr || []).map(x => `<li>${esc(x)}</li>`).join("") || '<li class="muted">אין</li>';
+  $("#rDecisions").innerHTML = li(s.decisions); $("#rQuestions").innerHTML = li(s.open_questions);
+  renderTranscript();
+}
+
+function renderTranscript() {
+  const q = $("#tSearch").value.trim().toLowerCase();
+  const segs = (current?.transcript?.segments || []).filter(s => !q || s.text.toLowerCase().includes(q));
+  const hl = text => { const e = esc(text); if (!q) return e;
+    return e.replace(new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), m => `<mark>${m}</mark>`); };
+  $("#rTranscript").innerHTML = segs.map(s => `<div class="seg" data-start="${s.start}" data-end="${s.end}">
+    <button class="ts" data-t="${fmt(s.start)}">${fmt(s.start)}</button><span>${hl(s.text)}</span></div>`).join("")
+    || '<p class="muted">אין תוצאות</p>';
+}
+$("#tSearch").oninput = renderTranscript;
+
+document.addEventListener("click", e => {
+  const ts = e.target.closest(".ts");
+  if (ts) { const p = $("#player"); p.currentTime = parseTs(ts.dataset.t); p.play(); }
+});
+$("#player").ontimeupdate = () => {
+  const now = $("#player").currentTime;
+  $$("#rTranscript .seg").forEach(d => d.classList.toggle("now", now >= +d.dataset.start && now < +d.dataset.end));
+};
+
+$$("#tabs button").forEach(b => b.onclick = () => {
+  $$("#tabs button").forEach(x => x.classList.toggle("active", x === b));
+  $$("[data-pane]").forEach(p => p.classList.toggle("hidden", p.dataset.pane !== b.dataset.tab));
+});
+$$("[data-export]").forEach(b => b.onclick = () => current && (location.href = `/api/jobs/${current.id}/export.${b.dataset.export}`));
+
+$("#copyBtn").onclick = async () => {
+  if (!current) return;
+  const r = await fetch(`/api/jobs/${current.id}/export.md`); let md = await r.text();
+  md = md.split("\n---\n## תמליל מלא")[0];
+  await navigator.clipboard.writeText(md); $("#copyBtn").textContent = "✓ הועתק";
+  setTimeout(() => $("#copyBtn").textContent = "📋 העתק סיכום", 1500);
+};
+$("#resumBtn").onclick = async () => {
+  if (!current) return;
+  await fetch(`/api/jobs/${current.id}/summarize`, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ summary_language: $("#optSumLang").value, context: $("#optContext").value || current.context }) });
+  $("#resultCard").classList.add("hidden"); openJob(current.id);
+};
+$("#delBtn").onclick = async () => {
+  if (!current || !confirm("למחוק את ההקלטה, התמליל והסיכום?")) return;
+  await fetch(`/api/jobs/${current.id}`, { method: "DELETE" });
+  current = null; $("#resultCard").classList.add("hidden"); loadHistory();
+};
+$("#newBtn").onclick = () => { clearTimeout(pollTimer); current = null; $("#resultCard").classList.add("hidden");
+  $("#progressCard").classList.add("hidden"); $$("#history li").forEach(li => li.classList.remove("active")); window.scrollTo(0, 0); };
+
+/* ---------- היסטוריה ---------- */
+async function loadHistory() {
+  const jobs = await (await fetch("/api/jobs")).json();
+  const icon = { done: "✅", error: "❌", processing: "⏳", queued: "⏳" };
+  $("#history").innerHTML = jobs.length ? jobs.map(j => `<li data-id="${j.id}" class="${current?.id === j.id ? "active" : ""}">
+      <div class="t">${icon[j.status] || ""} ${esc(j.title || j.name)}</div>
+      <div class="m">${esc(j.created_at)}${j.duration ? " · " + fmt(j.duration) : ""}</div></li>`).join("")
+    : '<li class="muted">אין עדיין הקלטות</li>';
+  $$("#history li[data-id]").forEach(li => li.onclick = () => openJob(li.dataset.id));
+}
+loadHistory();
+</script>
+</body>
+</html>
